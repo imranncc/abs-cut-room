@@ -5,7 +5,7 @@ function render(review){
  article.append(node('small',review.updatedAt||review.exportedAt||''));
  for(const k of ['orderGen','orderOtt']){article.append(node('h3',k==='orderGen'?'General ranking':'Ottawa ranking'));article.append(node('pre',JSON.stringify(d[k]||{},null,2)));}
  article.append(node('h3','Verdicts'),node('pre',JSON.stringify(d.verdicts||{},null,2)));
- for(const [id,messages] of Object.entries(d.threads||{})){article.append(node('h3',id));for(const m of messages)article.append(node('p',m.text));}
+ for(const [id,messages] of Object.entries(d.threads||{})){article.append(node('h3',id));for(const m of messages){if(m.field)article.append(node('small',({description:'Description (award name)',qualifications:'Qualifications',competition:'Competition involved'})[m.field]||m.field));article.append(node('p',m.text));}}
  article.append(node('h3','Notebook'),node('p',d.notebook||'No notebook notes.'));host.append(article);
 }
 document.querySelector('#files').addEventListener('change',async e=>{for(const f of e.target.files){try{render(JSON.parse(await f.text()));status.textContent='Review file loaded.';}catch{status.textContent='Could not read '+f.name;}}});

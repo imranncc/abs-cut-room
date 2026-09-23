@@ -123,6 +123,8 @@
       card.appendChild(rc);
 
       var b=el("div","body");
+      var isAward=sec.id==="Awards and Accomplishments" || sec.name==="Awards and Accomplishments";
+      if(isAward)b.appendChild(el("p","eyebrow","Description (award name)"));
       var tr=el("div","title-row");
       tr.appendChild(el("h3",null,e.t));
       if(e.ref) tr.appendChild(el("span","ref",e.ref));
@@ -131,7 +133,9 @@
       b.appendChild(tr);
       if(e.meta) b.appendChild(el("p","meta",e.meta));
       if(e.project) b.appendChild(el("p","project",e.project));
+      if(isAward)b.appendChild(el("p","eyebrow","Qualifications"));
       if(e.d) b.appendChild(el("p","desc",e.d));
+      if(isAward)b.appendChild(el("p","eyebrow","Competition involved"));
       if(e.extra) b.appendChild(el("p","meta",e.extra));
       if(e.hrs) b.appendChild(el("p","hrs",e.hrs));
       if(e.ctx) b.appendChild(el("p","ctx",e.ctx));
@@ -161,13 +165,23 @@
         var bu=el("div","bub",m.text);
         var w=el("span","when");
         var n=(m.text||"").length;
-        w.textContent = when(m.at) + (n<=LIM ? " · " + n : " · " + n + " (" + (n-LIM) + " over)");
+        var messageLimit=m.field==="description"?TITLE_LIMIT:LIM;
+        var fieldLabel=m.field?({description:"Description",qualifications:"Qualifications",competition:"Competition involved"}[m.field]+" · "):"";
+        w.textContent = fieldLabel + when(m.at) + (n<=messageLimit ? " · " + n : " · " + n + " (" + (n-messageLimit) + " over)");
         bu.appendChild(w);
         return bu;
       }
       msgs.forEach(function(m){ th.appendChild(bubble(m)); });
 
       var cw=el("div","cwrap");
+      var fieldChoice=null, activeLimit=LIM, activeLabel=LIMLABEL;
+      if(isAward){
+        var fieldLabel=el("label",null,"Feedback field");
+        fieldChoice=el("select");fieldChoice.setAttribute("aria-label","Feedback field for "+e.ref);
+        [["qualifications","Qualifications"],["description","Description (award name)"],["competition","Competition involved"]].forEach(function(pair){var o=el("option",null,pair[1]);o.value=pair[0];fieldChoice.appendChild(o);});
+        fieldChoice.addEventListener("change",function(){activeLimit=fieldChoice.value==="description"?TITLE_LIMIT:LIM;activeLabel=fieldChoice.options[fieldChoice.selectedIndex].text;counter();});
+        fieldLabel.appendChild(fieldChoice);cw.appendChild(fieldLabel);
+      }
       var comp=el("div","composer");
       var ta=el("textarea"); ta.rows=1; ta.placeholder="What do you think?";
       ta.setAttribute("aria-label","Comment on "+e.t);
@@ -177,10 +191,10 @@
       var cc=el("div","cc"); cc.setAttribute("aria-live","polite");
       function counter(){
         var n=ta.value.length;
-        cc.className="cc" + (n>LIM ? " over" : (n>LIM-20 && n>0 ? " near" : ""));
+        cc.className="cc" + (n>activeLimit ? " over" : (n>activeLimit-20 && n>0 ? " near" : ""));
         cc.textContent = n===0
-          ? LIM + " characters for " + LIMLABEL
-          : (n>LIM ? n + " / " + LIM + " · " + (n-LIM) + " over" : n + " / " + LIM);
+          ? activeLimit + " characters for " + activeLabel
+          : (n>activeLimit ? n + " / " + activeLimit + " · " + (n-activeLimit) + " over" : n + " / " + activeLimit);
       }
       counter();
 
@@ -189,6 +203,7 @@
         var v=ta.value.trim(); if(!v) return;
         if(!started){ setStatus("Enter your name first so I know who wrote this.","warn"); return; }
         var m={text:v,at:new Date().toISOString()};
+        if(fieldChoice)m.field=fieldChoice.value;
         (state.threads[e.id]||(state.threads[e.id]=[])).push(m);
         th.insertBefore(bubble(m), cw);
         ta.value=""; send.disabled=true; counter();

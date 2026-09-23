@@ -191,6 +191,29 @@
     .switch button{flex:1 1 100%; white-space:normal; text-align:center}
   }
   @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+
+  @media(max-width:1024px){
+    .arrow{width:44px;height:44px;font-size:14px}
+    .send{width:44px;height:44px;flex-basis:44px;font-size:18px}
+    .btn,.verdict,.switch button,.message-actions .btn,.unsent .btn,.message-editor .btn{min-height:44px}
+    details.talk > summary{min-height:44px;display:flex;align-items:center}
+    .section-select{min-height:44px}
+    .composer textarea{font-size:16px;min-width:0}
+    .cc{white-space:normal;overflow-wrap:anywhere;margin-right:52px;max-width:100%}
+  }
+  @media(max-width:600px){
+    .entries .entry{grid-template-columns:minmax(0,1fr);gap:16px}
+    .entry .rankcol{display:grid;grid-template-columns:44px 32px 44px minmax(0,1fr);align-items:center;gap:6px;min-width:0}
+    .rankno{text-align:center}
+    .section-label{grid-column:1/-1;margin-top:2px;font-size:13px}
+    .section-select{font-size:16px;padding:10px;margin:4px 0 0}
+    .section-unlock{grid-column:1/-1;justify-self:start;padding:8px 14px;font-size:14px}
+    .gate .grow{min-width:0}
+    .title-row h3{overflow-wrap:anywhere}
+    .message-editor .btn{margin:4px 6px 0 0}
+    .bub{max-width:100%}
+    .savebar .wrap{padding-block:10px;gap:4px 12px}
+  }
 </style>
 
 <header class="masthead">

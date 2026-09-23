@@ -18,7 +18,7 @@
  async function api(method,payload){
   const response=await fetch(apiUrl('/reviews/'+identity.id),{method,headers:{'Authorization':'Bearer '+identity.token,'X-Sketch-Key':key||'','Content-Type':'application/json'},body:payload?JSON.stringify(payload):undefined});
   if(response.status===404&&method==='GET')return null;
-  const data=await response.json();if(!response.ok){const e=Error(data.error||'Save failed');e.status=response.status;throw e;}return data;
+  const data=await response.json().catch(()=>({error:'Feedback service unavailable'}));if(!response.ok){const e=Error(data.error||'Save failed');e.status=response.status;throw e;}return data;
  }
  window.ABS={
   async loadSketch(){
@@ -38,20 +38,20 @@
    const local=read(draftKey);
    if(!config.apiBase){revision=local?.revision||0;return local?.data||null;}
    let remote;
-   try{remote=await api('GET');}catch(e){throw Error(e.message+' Download your local backup before changing devices.');}
+   try{remote=await api('GET');}catch(e){throw Error('Could not open your review. Please try again when connected.');}
    revision=remote?.revision||0;
    if(local?.dirty){
-    if(local.revision!==revision)throw Error('This device has unsent changes and another saved version exists. Download the local backup before reloading.');
+    if(local.revision!==revision)throw Error('This device has unsent changes and another saved version exists. Keep this page open and contact Imran to recover your changes.');
     return local.data;
    }
    return remote?.data||local?.data||null;
   },
   async save(data){
-   this.draft(data,true);
+   try{this.draft(data,true);}catch(error){if(!config.apiBase)throw error;}
    if(!config.apiBase){this.draft(data,false);return {local:true};}
    const result=await api('PUT',{data,revision});revision=result.revision;
    // The caller writes the newest draft if typing continued during this request.
-   this.draft(data,false);return {local:false};
+   try{this.draft(data,false);}catch{}return {local:false};
   },
   link(){const p=new URLSearchParams({key:key||'',review:identity.id,token:identity.token});return location.origin+location.pathname+'#'+p;},
   close(){

@@ -296,27 +296,35 @@ import {createSectionModel} from './review-model.js?v=2101a972a2eb';
   nb.addEventListener("input",function(){ state.notebook=nb.value; queue(); });
 
 
-  var timer=null, saving=false, dirty=false, generation=0;
+  var timer=null, saving=false, dirty=false, generation=0, retryDelay=1500, saveBlocked=false;
   function snapshot(){return thaw({name:state.name,updatedAt:new Date().toISOString(),view:state.view,orderGen:state.orderGen,orderOtt:state.orderOtt,verdicts:state.verdicts,threads:state.threads,sectionMoves:state.sectionMoves,notebook:state.notebook});}
   function queue(){
     if(!started){setStatus("Enter your name above to start your review.","warn");return;}
     dirty=true;generation++;
-    try{window.ABS.draft(snapshot());}catch{setStatus("Browser storage is unavailable. Download your review before leaving.","warn");}
-    setStatus(window.ABS.cloud()?"Unsaved changes…":"Saving on this device…");
+    try{window.ABS.draft(snapshot());}catch{}
+    if(saveBlocked)return;
+    setStatus("Saving…");
     clearTimeout(timer);timer=setTimeout(save,700);
   }
   async function save(){
-    if(!started||saving||!dirty)return;
-    saving=true;const savingGeneration=generation;
+    if(!started||saving||!dirty||saveBlocked)return;
+    clearTimeout(timer);saving=true;const savingGeneration=generation;
     try{
       const result=await window.ABS.save(snapshot());
-      saving=false;
-      if(generation!==savingGeneration){window.ABS.draft(snapshot());return save();}
+      saving=false;retryDelay=1500;
+      if(generation!==savingGeneration){try{window.ABS.draft(snapshot());}catch{}return save();}
       dirty=false;
-      setStatus(result.local?"Saved on this device. Download your review to send it to Imran.":"Saved online "+new Date().toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}),result.local?"":"ok");
-    }catch(error){saving=false;setStatus(error.message||"Could not save. Download a backup or retry.","warn");}
+      setStatus(result.local?"Saved on this device only. Online saving is unavailable.":"Saved",result.local?"warn":"ok");
+    }catch(error){
+      saving=false;
+      // Never retry authorization failures or overwrite a conflicting revision.
+      saveBlocked=!!error.status&&error.status<500&&![408,429].includes(error.status);
+      if(saveBlocked){setStatus(error.status===409?"Another saved version exists. Keep this page open and contact Imran to recover your changes.":"Changes could not be saved. Keep this page open and contact Imran.","warn");return;}
+      setStatus("Not saved online yet. Retrying automatically…","warn");
+      clearTimeout(timer);timer=setTimeout(save,retryDelay);retryDelay=Math.min(retryDelay*2,30000);
+    }
   }
-  $("#save-now").addEventListener("click",function(){dirty=true;save();});
+  window.addEventListener("online",function(){if(dirty&&!saveBlocked){clearTimeout(timer);save();}});
   window.addEventListener("beforeunload",function(ev){if(started&&dirty){ev.preventDefault();ev.returnValue="";}});
   var nameInput=$("#rev-name"), startBtn=$("#rev-start");
 
@@ -324,7 +332,7 @@ import {createSectionModel} from './review-model.js?v=2101a972a2eb';
     if(!ready){setStatus("Open the invitation link and wait for the sketch to load.","warn");return;}
     const n=nameInput.value.trim();
     if(n.length>100){setStatus("Please use a shorter name.","warn");return;}
-    if(started){setStatus("Your review is already open. Use Download review to keep a copy.");return;}
+    if(started){setStatus("Your review is open. Changes save automatically.");return;}
     startBtn.disabled=true;setStatus("Opening your review…");
     try{
       const d=await window.ABS.open();
@@ -336,11 +344,10 @@ import {createSectionModel} from './review-model.js?v=2101a972a2eb';
         state.view=d.view==='ott'?'ott':'gen';
       }
       started=true;startBtn.disabled=false;$("#viewbox").hidden=false;$("#review-tools").hidden=false;tally();setView(state.view);
-      $("#storage-note").textContent=window.ABS.cloud()?"Only you and Imran can access your feedback through your private links. Bookmark your return link to reopen your full review on any device. Keep it private: anyone you share it with can access your review.":"Online storage is not connected yet. Your draft saves only in this browser. Download your review and send that file to Imran.";
+      $("#storage-note").textContent=window.ABS.cloud()?"Only you and Imran can access your feedback through your private links. Bookmark your return link to reopen your full review on any device. Keep it private: anyone you share it with can access your review.":"Online saving is unavailable. Changes remain on this device until the connection is restored.";
       $("#copy-review").hidden=!window.ABS.cloud();$("#close-review").hidden=!window.ABS.cloud();if(window.ABS.cloud()){$("#return-link-box").hidden=false;$("#return-link").value=window.ABS.link();}queue();
     }catch(error){startBtn.disabled=false;setStatus(error.message,"warn");$("#review-tools").hidden=false;}
   }
-  $("#download-review").addEventListener("click",()=>{try{window.ABS.download(started?snapshot():undefined);}catch(e){setStatus(e.message,"warn");}});
   $("#copy-review").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(window.ABS.link());setStatus("Private review link copied. Keep it to resume your review.","ok");}catch{setStatus("Could not copy. Your review remains saved online.","warn");}});
   $("#close-review").addEventListener('click',async function(){
     if(saving){setStatus('Wait for your review to finish saving before closing.');return;}

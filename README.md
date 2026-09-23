@@ -6,7 +6,7 @@ The frontend preserves the approved descriptions and original design. Applicatio
 
 ## Current hosting
 
-GitHub Pages serves `public/` through the deployed `gh-pages` branch. Cloudflare Workers and D1 provide private online feedback storage at the `apiBase` in `public/config.json`. Browser drafts and downloaded backups remain available. Files can also be opened in `owner.html`.
+GitHub Pages serves `public/` through the deployed `gh-pages` branch. Cloudflare Workers and D1 provide private online feedback storage at the `apiBase` in `public/config.json`. Feedback saves automatically, with local drafts retained for recovery and automatic retries after connection failures. Previously exported review files can still be opened in `owner.html`.
 
 Online saving uses the Cloudflare Worker and D1 database below; each reviewer uses a unique private review link rather than their name as a credential. Review records are isolated by a 256-bit token and updates use revision checks so a stale tab cannot silently replace a newer saved review. The private owner link lists all reviews. No third-party reviewer accounts are needed.
 
@@ -29,6 +29,6 @@ The invitation, reviewer return links, and admin link serve different purposes. 
 
 After deployment, `ABS_SECRETS_FILE=/absolute/private/path node scripts/verify-cloud.mjs` verifies two synthetic reviewers against the real API, including edit/unsend and admin isolation. It prints only the disposable record IDs so those exact test records can be removed afterward.
 
-No Cloudflare billing upgrade is required. Local drafts and downloaded review files remain available if the free backend limit is reached. Existing Claude reviewer data has not been automatically migrated; the prior audit found only synthetic QA records. The Claude artifact remains unchanged.
+No Cloudflare billing upgrade is required. Local drafts are retained if online saving is interrupted. The page reports unsaved changes and retries transient failures automatically. Existing Claude reviewer data has not been automatically migrated; the prior audit found only synthetic QA records. The Claude artifact remains unchanged.
 
 Each entry has a Section dropdown below its rank arrows. Placement suggestions apply to both ranking views, with independent ordering in each. Comments and verdicts stay attached to the entry; the admin inbox lists suggested moves. Original application data and other reviewers are unaffected.

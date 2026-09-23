@@ -8,11 +8,11 @@ The frontend preserves the approved descriptions and original design. Applicatio
 
 GitHub Pages serves `public/` through the deployed `gh-pages` branch. Cloudflare Workers and D1 provide private online feedback storage at the `apiBase` in `public/config.json`. Feedback saves automatically, with local drafts retained for recovery and automatic retries after connection failures. Previously exported review files can still be opened in `owner.html`.
 
-Online saving uses the Cloudflare Worker and D1 database below; each reviewer uses a unique private review link rather than their name as a credential. Review records are isolated by a 256-bit token and updates use revision checks so a stale tab cannot silently replace a newer saved review. The private owner link lists all reviews. No third-party reviewer accounts are needed.
+Reviewers use the shared invitation and enter the same name each time to reopen their feedback, including on another device. Names are normalized for case and spacing. This intentionally permits anyone with the invitation to access a review by entering its name; the owner explicitly accepted this tradeoff. The UI discloses it. There is no public reviewer directory.
 
-Reviewers can edit their own messages or unsend them, with an immediate Undo option. Unsent messages are removed from the saved review and the admin inbox after a successful save. This cannot retract a comment the owner already read or exported. Admin feedback is grouped by reviewer and activity; rankings and verdicts remain available in an expandable section. No reviewer token can list all reviews or access another record.
+The Worker resolves names to stable review IDs and issues server-derived tokens. Names attach to existing reviews without deleting their content or invalidating legacy tokens. Duplicate legacy names require owner resolution rather than choosing a record arbitrarily. Updates retain revision checks against concurrent overwrites. Admin access still requires the separate private owner credential; name login cannot access the admin inbox.
 
-The invitation, reviewer return links, and admin link serve different purposes. Share only the invitation with new consultants. Each consultant should bookmark their own return link to reopen their full record on another device. Keep the admin link private; possession of a private link grants its access. Names are display labels, not passwords. New visitors do not receive a prefilled QA name.
+Reviewers can edit or unsend comments, with an immediate Undo option, and suggest section moves. Changes save automatically. Sign out returns to the name form. The previous private-return-link controls are removed; the same shared invitation works for every visit.
 
 ## Backend deployment
 

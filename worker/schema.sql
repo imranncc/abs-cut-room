@@ -5,3 +5,9 @@ CREATE TABLE IF NOT EXISTS reviews (
  revision INTEGER NOT NULL DEFAULT 0,
  updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS name_logins (
+ name_key TEXT PRIMARY KEY,
+ review_id TEXT NOT NULL UNIQUE,
+ token_hash TEXT NOT NULL
+);

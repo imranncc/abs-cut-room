@@ -12,7 +12,7 @@
  if(!identity)identity={id:crypto.randomUUID(),token:token()};
  try{write('abs-review-identity',identity);}catch{}
  let config={apiBase:''}, revision=0;
- const draftKey='abs-review-'+identity.id;
+ let draftKey='abs-review-'+identity.id;
  const configPromise=fetch('config.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('Configuration unavailable');return r.json();}).then(c=>{config=c;return c;});
  function apiUrl(path){return config.apiBase.replace(/\/$/,'')+path;}
  async function api(method,payload){
@@ -33,8 +33,15 @@
   },
   cloud(){return !!config.apiBase;},
   draft(data,dirty=true){write(draftKey,{data,dirty,revision,at:new Date().toISOString()});},
-  async open(){
+  async open(name){
    await configPromise;
+   if(config.apiBase&&name){
+    const response=await fetch(apiUrl('/login'),{method:'POST',headers:{'X-Sketch-Key':key||'','Content-Type':'application/json'},body:JSON.stringify({name})});
+    const login=await response.json();if(!response.ok)throw Error(login.error||'Could not open your review.');
+    identity={id:login.id,token:login.token};draftKey='abs-review-'+identity.id;
+    try{write('abs-review-identity',identity);}catch{}
+    history.replaceState(null,'',location.origin+location.pathname+'#'+new URLSearchParams({key:key||''}));
+   }
    const local=read(draftKey);
    if(!config.apiBase){revision=local?.revision||0;return local?.data||null;}
    let remote;

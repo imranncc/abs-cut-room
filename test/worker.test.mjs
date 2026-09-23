@@ -44,3 +44,25 @@ test('separate reviewers, editable comments, unsend and private admin inbox',asy
  const admin=await (await request('GET','/admin/reviews',undefined,owner)).json();assert.equal(admin.reviews.length,2);assert.deepEqual(admin.reviews.find(r=>r.id===secondId).data.threads.empl3,[]);
  assert.equal(JSON.stringify(admin).includes('Edited private comment'),false);
 });
+test('name login reopens existing feedback and keeps legacy links usable',async()=>{
+ assert.equal((await request('POST','/login',{name:data.name},other,other)).status,403);
+ const login=await (await request('POST','/login',{name:'  SYNTHETIC   Reviewer  '})).json();
+ assert.equal(login.id,id);
+ let saved=await (await request('GET','/reviews/'+login.id,undefined,login.token)).json();
+ assert.equal(saved.data.notebook,'new');
+ assert.equal((await request('PUT','/reviews/'+login.id,{data:{...saved.data,notebook:'Name login update'},revision:saved.revision},login.token)).status,200);
+ saved=await (await request('GET',undefined,undefined,token)).json();assert.equal(saved.data.notebook,'Name login update');
+ const repeat=await (await request('POST','/login',{name:'Synthetic reviewer'})).json();assert.deepEqual(repeat,login);
+ assert.equal((await request('GET','/admin/reviews',undefined,login.token)).status,401);
+});
+test('new name registration is repeatable across devices and separates names',async()=>{
+ const [a,b]=await Promise.all([request('POST','/login',{name:'New name'}),request('POST','/login',{name:'New name'})]);
+ const login=await a.json();assert.deepEqual(await b.json(),login);
+ const different=await (await request('POST','/login',{name:'Different name'})).json();assert.notEqual(different.id,login.id);
+ assert.equal((await request('PUT','/reviews/'+login.id,{data:{...data,name:'New name'},revision:0},login.token)).status,200);
+ assert.equal((await request('GET','/reviews/'+login.id,undefined,different.token)).status,401);
+ const returning=await (await request('POST','/login',{name:'new NAME'})).json();assert.deepEqual(returning,login);
+ assert.equal((await request('GET','/reviews/'+returning.id,undefined,returning.token)).status,200);
+ assert.equal((await request('POST','/login',{name:' '})).status,400);
+ assert.equal((await request('POST','/login',{name:'x'.repeat(101)})).status,400);
+});

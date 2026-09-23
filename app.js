@@ -67,7 +67,7 @@ import {createSectionModel} from './review-model.js';
     });
     $("#notebook").hidden = false;
 
-    ready = true;
+    ready = true;startBtn.disabled=false;
     $("#storage-note").textContent=window.ABS.cloud()?"Feedback saves privately online. Open your review to comment, rank entries, or suggest section changes.":"Your draft saves on this device. Online storage is not connected.";
     tally(); paintAll();
 
@@ -269,7 +269,7 @@ import {createSectionModel} from './review-model.js';
     var target=host.querySelector('[data-entry-id="'+eid+'"]');
     if(target){target.scrollIntoView({block:'center',behavior:'auto'});target.querySelector('.section-select').focus();}
   }
-  function paintAll(){ if(ready) SECTIONS.forEach(paint); }
+  function paintAll(){ if(ready){SECTIONS.forEach(paint);host.querySelectorAll(".sechead > .lede").forEach(function(n){n.hidden=Object.keys(state.sectionMoves).length>0;});} }
 
   function move(sec, idx, dir){
     if(!started){nameInput.focus();setStatus("Enter your name before ranking.","warn");return;}
@@ -337,11 +337,16 @@ import {createSectionModel} from './review-model.js';
       }
       started=true;startBtn.disabled=false;$("#viewbox").hidden=false;$("#review-tools").hidden=false;tally();setView(state.view);
       $("#storage-note").textContent=window.ABS.cloud()?"Only you and Imran can access your feedback through your private links. Bookmark your return link to reopen your full review on any device. Keep it private: anyone you share it with can access your review.":"Online storage is not connected yet. Your draft saves only in this browser. Download your review and send that file to Imran.";
-      $("#copy-review").hidden=!window.ABS.cloud();if(window.ABS.cloud()){$("#return-link-box").hidden=false;$("#return-link").value=window.ABS.link();}queue();
+      $("#copy-review").hidden=!window.ABS.cloud();$("#close-review").hidden=!window.ABS.cloud();if(window.ABS.cloud()){$("#return-link-box").hidden=false;$("#return-link").value=window.ABS.link();}queue();
     }catch(error){startBtn.disabled=false;setStatus(error.message,"warn");$("#review-tools").hidden=false;}
   }
   $("#download-review").addEventListener("click",()=>{try{window.ABS.download(started?snapshot():undefined);}catch(e){setStatus(e.message,"warn");}});
   $("#copy-review").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(window.ABS.link());setStatus("Private review link copied. Keep it to resume your review.","ok");}catch{setStatus("Could not copy. Your review remains saved online.","warn");}});
+  $("#close-review").addEventListener('click',async function(){
+    if(saving){setStatus('Wait for your review to finish saving before closing.');return;}
+    if(dirty)await save();if(dirty)return;
+    try{window.ABS.close();}catch(error){setStatus(error.message,'warn');}
+  });
   startBtn.addEventListener("click",begin);
   nameInput.addEventListener("keydown",function(ev){ if(ev.key==="Enter"){ ev.preventDefault(); begin(); } });
 })();

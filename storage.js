@@ -54,6 +54,11 @@
    this.draft(data,false);return {local:false};
   },
   link(){const p=new URLSearchParams({key:key||'',review:identity.id,token:identity.token});return location.origin+location.pathname+'#'+p;},
+  close(){
+   const local=read(draftKey);if(local?.dirty)throw Error('Save your changes before closing the review.');
+   localStorage.removeItem(draftKey);localStorage.removeItem('abs-review-identity');localStorage.removeItem('absName');
+   location.replace(location.origin+location.pathname+'#'+new URLSearchParams({key:key||''}));
+  },
   download(data){
    const content=data||read(draftKey)?.data;if(!content)throw Error('No review to download yet.');
    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({format:'abs-cut-room-review-v1',reviewId:identity.id,exportedAt:new Date().toISOString(),data:content},null,2)],{type:'application/json'}));a.download='ABS-review-'+(content.name||'draft').replace(/[^a-z0-9]+/gi,'-')+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);

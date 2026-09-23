@@ -6,9 +6,9 @@ The frontend preserves the approved descriptions and original design. Applicatio
 
 ## Current hosting
 
-GitHub Pages serves `public/` through the deployed `gh-pages` branch. The encrypted site can operate without a backend: reviewers save drafts in their browser and download feedback files to send to the applicant. The page explicitly labels this mode. Files can be opened in `owner.html`.
+GitHub Pages serves `public/` through the deployed `gh-pages` branch. Cloudflare Workers and D1 provide private online feedback storage at the `apiBase` in `public/config.json`. Browser drafts and downloaded backups remain available. Files can also be opened in `owner.html`.
 
-Online saving requires the Cloudflare Worker and D1 database below. Once configured, each reviewer uses a unique private review link rather than their name as a credential. Review records are isolated by a 256-bit token and updates use revision checks so a stale tab cannot silently replace a newer saved review. The private owner link lists all reviews. No third-party reviewer accounts are needed.
+Online saving uses the Cloudflare Worker and D1 database below; each reviewer uses a unique private review link rather than their name as a credential. Review records are isolated by a 256-bit token and updates use revision checks so a stale tab cannot silently replace a newer saved review. The private owner link lists all reviews. No third-party reviewer accounts are needed.
 
 Reviewers can edit their own messages or unsend them, with an immediate Undo option. Unsent messages are removed from the saved review and the admin inbox after a successful save. This cannot retract a comment the owner already read or exported. Admin feedback is grouped by reviewer and activity; rankings and verdicts remain available in an expandable section. No reviewer token can list all reviews or access another record.
 
@@ -30,3 +30,5 @@ The invitation, reviewer return links, and admin link serve different purposes. 
 After deployment, `ABS_SECRETS_FILE=/absolute/private/path node scripts/verify-cloud.mjs` verifies two synthetic reviewers against the real API, including edit/unsend and admin isolation. It prints only the disposable record IDs so those exact test records can be removed afterward.
 
 No Cloudflare billing upgrade is required. Local drafts and downloaded review files remain available if the free backend limit is reached. Existing Claude reviewer data has not been automatically migrated; the prior audit found only synthetic QA records. The Claude artifact remains unchanged.
+
+Each entry has a Section dropdown below its rank arrows. Placement suggestions apply to both ranking views, with independent ordering in each. Comments and verdicts stay attached to the entry; the admin inbox lists suggested moves. Original application data and other reviewers are unaffected.

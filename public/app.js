@@ -1,3 +1,4 @@
+import {createSectionModel} from './review-model.js';
 (function(){
   "use strict";
 
@@ -13,9 +14,10 @@
     }catch(e){ return ""; }
   }
 
+  var sectionModel=null;
   var SECTIONS=[], DEADLINE=null, CAP=32, OTT_MAX=3, TITLE_LIMIT=48, TOTAL=0;
   var statusEl=$("#status"), tallyEl=$("#tally");
-  var state={name:"",view:"gen",orderGen:{},orderOtt:{},verdicts:{},threads:{},notebook:""};
+  var state={name:"",view:"gen",orderGen:{},orderOtt:{},sectionMoves:{},verdicts:{},threads:{},notebook:""};
   var started=false, ready=false;
   var host=$("#sections"), lists={}, caps={};
 
@@ -30,6 +32,7 @@
 
   function build(data){
     SECTIONS = data.sections || [];
+    sectionModel=createSectionModel(SECTIONS);
     var m = data.meta || {};
     DEADLINE = new Date(m.deadline || "2026-10-01T16:30:00-04:00");
     CAP = m.cap || 32; OTT_MAX = m.ottMax || 3; TITLE_LIMIT = m.titleLimit || 48;
@@ -65,6 +68,7 @@
     $("#notebook").hidden = false;
 
     ready = true;
+    $("#storage-note").textContent=window.ABS.cloud()?"Feedback saves privately online. Open your review to comment, rank entries, or suggest section changes.":"Your draft saves on this device. Online storage is not connected.";
     tally(); paintAll();
 
   }
@@ -108,7 +112,9 @@
       for(var i=0;i<sec.entries.length;i++){ if(sec.entries[i].id===eid){ e=sec.entries[i]; break; } }
       if(!e) return;
 
-      var card=el("div","entry");
+      var card=el("div","entry");card.dataset.entryId=e.id;
+      var originalSection=sectionModel.originalSection(e.id);
+      var LIM=originalSection.lim||150,LIMLABEL=originalSection.limLabel||"description";
       if(state.verdicts[e.id]==="cut") card.classList.add("out");
 
       var rc=el("div","rankcol");
@@ -120,10 +126,16 @@
       dn.setAttribute("aria-label","Move "+e.t+" down");
       dn.addEventListener("click",function(){ move(sec,idx,1); });
       rc.appendChild(up); rc.appendChild(no); rc.appendChild(dn);
+      var moveLabel=el('label','section-label','Section');
+      var picker=el('select','section-select');picker.setAttribute('aria-label','Section for '+e.ref+' '+e.t);picker.title=sec.name;
+      SECTIONS.forEach(function(s){var option=el('option',null,s.name);option.value=s.id;picker.appendChild(option);});
+      picker.value=sec.id;picker.disabled=!started;
+      picker.addEventListener('change',function(){changeSection(e.id,picker.value);});
+      moveLabel.appendChild(picker);rc.appendChild(moveLabel);
       card.appendChild(rc);
 
       var b=el("div","body");
-      var isAward=sec.id==="Awards and Accomplishments" || sec.name==="Awards and Accomplishments";
+      var isAward=originalSection.name==="Awards and Accomplishments";
       if(isAward)b.appendChild(el("p","eyebrow","Description (award name)"));
       var tr=el("div","title-row");
       tr.appendChild(el("h3",null,e.t));
@@ -131,6 +143,7 @@
       if(state.verdicts[e.id]==="cut") tr.appendChild(el("span","chip outc","Left out"));
       else if(e.nodesc) tr.appendChild(el("span","chip","No description yet"));
       b.appendChild(tr);
+      if(originalSection.id!==sec.id)b.appendChild(el("p","meta","Your suggestion: move from "+originalSection.name+" to "+sec.name));
       if(e.meta) b.appendChild(el("p","meta",e.meta));
       if(e.project) b.appendChild(el("p","project",e.project));
       if(isAward)b.appendChild(el("p","eyebrow","Qualifications"));
@@ -246,6 +259,16 @@
       card.appendChild(b); list.appendChild(card);
     });
   }
+  function applySections(){
+    var resolved=sectionModel.normalize(state);SECTIONS=resolved.sections;
+    state.sectionMoves=resolved.sectionMoves;state.orderGen=resolved.orderGen;state.orderOtt=resolved.orderOtt;
+  }
+  function changeSection(eid,destination){
+    if(!started){nameInput.focus();setStatus('Open your review before moving entries.','warn');return;}
+    state.sectionMoves[eid]=destination;applySections();paintAll();queue();
+    var target=host.querySelector('[data-entry-id="'+eid+'"]');
+    if(target){target.scrollIntoView({block:'center',behavior:'auto'});target.querySelector('.section-select').focus();}
+  }
   function paintAll(){ if(ready) SECTIONS.forEach(paint); }
 
   function move(sec, idx, dir){
@@ -274,7 +297,7 @@
 
 
   var timer=null, saving=false, dirty=false, generation=0;
-  function snapshot(){return thaw({name:state.name,updatedAt:new Date().toISOString(),view:state.view,orderGen:state.orderGen,orderOtt:state.orderOtt,verdicts:state.verdicts,threads:state.threads,notebook:state.notebook});}
+  function snapshot(){return thaw({name:state.name,updatedAt:new Date().toISOString(),view:state.view,orderGen:state.orderGen,orderOtt:state.orderOtt,verdicts:state.verdicts,threads:state.threads,sectionMoves:state.sectionMoves,notebook:state.notebook});}
   function queue(){
     if(!started){setStatus("Enter your name above to start your review.","warn");return;}
     dirty=true;generation++;
@@ -309,7 +332,7 @@
       state.name=d?.name||n;nameInput.value=state.name;nameInput.readOnly=true;startBtn.textContent="Review open";
 
       if(d){state.verdicts=thaw(d.verdicts)||{};state.threads=thaw(d.threads)||{};state.notebook=d.notebook||"";nb.value=state.notebook;
-        SECTIONS.forEach(s=>{const valid=s.entries.map(e=>e.id);["orderGen","orderOtt"].forEach(k=>{const saved=d[k]?.[s.id];if(!Array.isArray(saved))return;const order=[...new Set(saved.filter(x=>valid.includes(x)))];valid.forEach(x=>{if(!order.includes(x))order.push(x);});state[k][s.id]=order;});});
+        state.sectionMoves=thaw(d.sectionMoves)||{};state.orderGen=thaw(d.orderGen)||{};state.orderOtt=thaw(d.orderOtt)||{};applySections();
         state.view=d.view==='ott'?'ott':'gen';
       }
       started=true;startBtn.disabled=false;$("#viewbox").hidden=false;$("#review-tools").hidden=false;tally();setView(state.view);

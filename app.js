@@ -132,6 +132,11 @@ import {createSectionModel} from './review-model.js?v=2101a972a2eb';
       picker.value=sec.id;picker.disabled=!started;
       picker.addEventListener('change',function(){changeSection(e.id,picker.value);});
       moveLabel.appendChild(picker);rc.appendChild(moveLabel);
+      if(!started){
+        var unlock=el('button','btn ghost section-unlock','Open review to move');unlock.type='button';
+        unlock.addEventListener('click',function(){nameInput.scrollIntoView({block:'center',behavior:'smooth'});nameInput.focus();setStatus('Enter your name and click Open my review to enable section changes.');});
+        rc.appendChild(unlock);
+      }
       card.appendChild(rc);
 
       var b=el("div","body");

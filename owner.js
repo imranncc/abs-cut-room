@@ -2,19 +2,20 @@ const status=document.querySelector('#status'),host=document.querySelector('#rev
 const params=new URLSearchParams(location.hash.slice(1)), admin=params.get('admin');
 const fields={description:'Description (award name)',qualifications:'Qualifications',competition:'Competition involved'};
 const node=(tag,text)=>{const el=document.createElement(tag);el.textContent=text;return el;};
-let entries=new Map();
+let entries=new Map(),sectionNames=new Map(),origins=new Map();
 async function loadLabels(){
  const key=params.get('key');if(!key)return;
  const decode=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
  const packet=await fetch('sketch.enc.json',{cache:'no-store'}).then(r=>r.json());
  const cryptoKey=await crypto.subtle.importKey('raw',decode(key),'AES-GCM',false,['decrypt']);
  const data=JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:decode(packet.iv)},cryptoKey,decode(packet.ciphertext))));
- for(const section of data.sections)for(const e of section.entries)entries.set(e.id,e);
+ for(const section of data.sections){sectionNames.set(section.id,section.name);for(const e of section.entries){entries.set(e.id,e);origins.set(e.id,section.id);}}
 }
 function title(id){const e=entries.get(id);return e?`${e.ref} · ${e.t}${e.project?' — '+e.project:''}`:id;}
 function render(review){
  const d=review.data||review,article=node('article','');article.append(node('h2',d.name||'Unnamed reviewer'));
  article.append(node('small','Last saved: '+(review.updatedAt||review.exportedAt||d.updatedAt||'Unknown')));
+ if(Object.keys(d.sectionMoves||{}).length){article.append(node('h3','Suggested section changes'));for(const [id,to] of Object.entries(d.sectionMoves))article.append(node('p',title(id)+': '+(sectionNames.get(origins.get(id))||'Original section')+' → '+(sectionNames.get(to)||to)));}
  for(const [id,messages] of Object.entries(d.threads||{})){
   if(!messages.length)continue;
   article.append(node('h3',title(id)));

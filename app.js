@@ -161,6 +161,7 @@
       det.appendChild(sum);
       var th=el("div","thread");
 
+      function updateCount(){var n=(state.threads[e.id]||[]).length;sum.textContent=n?(n===1?'1 comment':n+' comments'):'Comment';}
       function bubble(m){
         var bu=el("div","bub",m.text);
         var w=el("span","when");
@@ -168,7 +169,30 @@
         var messageLimit=m.field==="description"?TITLE_LIMIT:LIM;
         var fieldLabel=m.field?({description:"Description",qualifications:"Qualifications",competition:"Competition involved"}[m.field]+" · "):"";
         w.textContent = fieldLabel + when(m.at) + (n<=messageLimit ? " · " + n : " · " + n + " (" + (n-messageLimit) + " over)");
+        if(m.editedAt)w.textContent+=' · edited';
         bu.appendChild(w);
+        var actions=el('div','message-actions');
+        var edit=el('button','btn ghost','Edit'),unsend=el('button','btn ghost','Unsend');
+        edit.type=unsend.type='button';
+        edit.addEventListener('click',function(){
+          if(!started)return;
+          var editor=el('div','message-editor'),input=el('textarea');input.value=m.text;input.rows=3;
+          input.setAttribute('aria-label','Edit comment on '+e.t);
+          var saveEdit=el('button','btn','Save edit'),cancel=el('button','btn ghost','Cancel');
+          saveEdit.type=cancel.type='button';
+          saveEdit.addEventListener('click',function(){if(!input.value.trim())return;m.text=input.value.trim();m.editedAt=new Date().toISOString();editor.replaceWith(bubble(m));queue();});
+          cancel.addEventListener('click',function(){editor.replaceWith(bubble(m));});
+          editor.append(input,saveEdit,cancel);bu.replaceWith(editor);input.focus();
+        });
+        unsend.addEventListener('click',function(){
+          if(!started)return;
+          var messages=state.threads[e.id]||[],index=messages.indexOf(m);if(index<0)return;
+          messages.splice(index,1);
+          var notice=el('div','unsent','Comment unsent. '),undo=el('button','btn ghost','Undo');undo.type='button';
+          undo.addEventListener('click',function(){messages.splice(Math.min(index,messages.length),0,m);notice.replaceWith(bubble(m));updateCount();queue();});
+          notice.appendChild(undo);bu.replaceWith(notice);updateCount();queue();
+        });
+        actions.append(edit,unsend);bu.appendChild(actions);
         return bu;
       }
       msgs.forEach(function(m){ th.appendChild(bubble(m)); });
@@ -202,7 +226,7 @@
       function post(){
         var v=ta.value.trim(); if(!v) return;
         if(!started){ setStatus("Enter your name first so I know who wrote this.","warn"); return; }
-        var m={text:v,at:new Date().toISOString()};
+        var m={id:crypto.randomUUID(),text:v,at:new Date().toISOString()};
         if(fieldChoice)m.field=fieldChoice.value;
         (state.threads[e.id]||(state.threads[e.id]=[])).push(m);
         th.insertBefore(bubble(m), cw);
@@ -272,24 +296,25 @@
   $("#save-now").addEventListener("click",function(){dirty=true;save();});
   window.addEventListener("beforeunload",function(ev){if(started&&dirty){ev.preventDefault();ev.returnValue="";}});
   var nameInput=$("#rev-name"), startBtn=$("#rev-start");
-  try{var cn=localStorage.getItem("absName");if(cn)nameInput.value=cn;}catch{}
+
   async function begin(){
     if(!ready){setStatus("Open the invitation link and wait for the sketch to load.","warn");return;}
-    const n=nameInput.value.trim();if(!n){nameInput.focus();setStatus("Enter a name for your feedback.","warn");return;}
+    const n=nameInput.value.trim();
     if(n.length>100){setStatus("Please use a shorter name.","warn");return;}
     if(started){setStatus("Your review is already open. Use Download review to keep a copy.");return;}
     startBtn.disabled=true;setStatus("Opening your review…");
     try{
       const d=await window.ABS.open();
-      state.name=d?.name||n;nameInput.value=state.name;
-      try{localStorage.setItem("absName",state.name);}catch{}
+      if(!d?.name&&!n){startBtn.disabled=false;nameInput.focus();setStatus("Enter a name for your feedback.","warn");return;}
+      state.name=d?.name||n;nameInput.value=state.name;nameInput.readOnly=true;startBtn.textContent="Review open";
+
       if(d){state.verdicts=thaw(d.verdicts)||{};state.threads=thaw(d.threads)||{};state.notebook=d.notebook||"";nb.value=state.notebook;
         SECTIONS.forEach(s=>{const valid=s.entries.map(e=>e.id);["orderGen","orderOtt"].forEach(k=>{const saved=d[k]?.[s.id];if(!Array.isArray(saved))return;const order=[...new Set(saved.filter(x=>valid.includes(x)))];valid.forEach(x=>{if(!order.includes(x))order.push(x);});state[k][s.id]=order;});});
         state.view=d.view==='ott'?'ott':'gen';
       }
       started=true;startBtn.disabled=false;$("#viewbox").hidden=false;$("#review-tools").hidden=false;tally();setView(state.view);
-      $("#storage-note").textContent=window.ABS.cloud()?"Your feedback saves online. Keep your private review link to return on another device; anyone with that link can edit this review.":"Online storage is not connected yet. Your draft saves only in this browser. Download your review and send that file to Imran.";
-      $("#copy-review").hidden=!window.ABS.cloud();queue();
+      $("#storage-note").textContent=window.ABS.cloud()?"Only you and Imran can access your feedback through your private links. Bookmark your return link to reopen your full review on any device. Keep it private: anyone you share it with can access your review.":"Online storage is not connected yet. Your draft saves only in this browser. Download your review and send that file to Imran.";
+      $("#copy-review").hidden=!window.ABS.cloud();if(window.ABS.cloud()){$("#return-link-box").hidden=false;$("#return-link").value=window.ABS.link();}queue();
     }catch(error){startBtn.disabled=false;setStatus(error.message,"warn");$("#review-tools").hidden=false;}
   }
   $("#download-review").addEventListener("click",()=>{try{window.ABS.download(started?snapshot():undefined);}catch(e){setStatus(e.message,"warn");}});

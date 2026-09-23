@@ -57,7 +57,7 @@
   close(){
    const local=read(draftKey);if(local?.dirty)throw Error('Save your changes before closing the review.');
    localStorage.removeItem(draftKey);localStorage.removeItem('abs-review-identity');localStorage.removeItem('absName');
-   location.replace(location.origin+location.pathname+'#'+new URLSearchParams({key:key||''}));
+   history.replaceState(null,'',location.origin+location.pathname+'#'+new URLSearchParams({key:key||''}));location.reload();
   },
   download(data){
    const content=data||read(draftKey)?.data;if(!content)throw Error('No review to download yet.');

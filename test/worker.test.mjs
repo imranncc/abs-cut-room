@@ -28,3 +28,19 @@ test('private storage, revisions, access control and validation',async()=>{
  assert.equal((await request('PUT',undefined,{data:{...data,notebook:'x'.repeat(260000)},revision:2})).status,413);
  assert.equal((await request('GET','/reviews')).status,404);
 });
+test('separate reviewers, editable comments, unsend and private admin inbox',async()=>{
+ const secondId=crypto.randomUUID();
+ const secondData={...data,name:'Second synthetic reviewer',threads:{empl3:[{id:'comment-2',text:'Private second review',at:'2026-09-23'}]}};
+ assert.equal((await request('PUT','/reviews/'+secondId,{data:secondData,revision:0},other)).status,200);
+ assert.equal((await request('GET','/reviews/'+secondId,undefined,token)).status,401);
+ assert.equal((await request('GET','/admin/reviews',undefined,other)).status,401);
+ assert.equal((await request('GET','/admin/reviews',undefined,sketch)).status,401);
+ const edited={...secondData,threads:{empl3:[{...secondData.threads.empl3[0],text:'Edited private comment',editedAt:'2026-09-23'}]}};
+ assert.equal((await request('PUT','/reviews/'+secondId,{data:edited,revision:1},other)).status,200);
+ let saved=await (await request('GET','/reviews/'+secondId,undefined,other)).json();assert.equal(saved.data.threads.empl3[0].text,'Edited private comment');
+ const unsent={...edited,threads:{empl3:[]}};
+ assert.equal((await request('PUT','/reviews/'+secondId,{data:unsent,revision:2},other)).status,200);
+ saved=await (await request('GET','/reviews/'+secondId,undefined,other)).json();assert.deepEqual(saved.data.threads.empl3,[]);
+ const admin=await (await request('GET','/admin/reviews',undefined,owner)).json();assert.equal(admin.reviews.length,2);assert.deepEqual(admin.reviews.find(r=>r.id===secondId).data.threads.empl3,[]);
+ assert.equal(JSON.stringify(admin).includes('Edited private comment'),false);
+});

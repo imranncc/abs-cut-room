@@ -1,6 +1,6 @@
 const status=document.querySelector('#status'),host=document.querySelector('#reviews');
 const params=new URLSearchParams(location.hash.slice(1)), admin=params.get('admin');
-const fields={description:'Description (award name)',qualifications:'Qualifications',competition:'Competition involved'};
+const fields={description:'Description (award name)',qualifications:'Qualifications',competition:'Competition involved',comment:'Comment',suggestion:'Suggested wording'};
 const node=(tag,text)=>{const el=document.createElement(tag);el.textContent=text;return el;};
 let entries=new Map(),sectionNames=new Map(),origins=new Map();
 async function loadLabels(){
@@ -9,6 +9,11 @@ async function loadLabels(){
  const packet=await fetch('sketch.enc.json',{cache:'no-store'}).then(r=>r.json());
  const cryptoKey=await crypto.subtle.importKey('raw',decode(key),'AES-GCM',false,['decrypt']);
  const data=JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:decode(packet.iv)},cryptoKey,decode(packet.ciphertext))));
+ try{
+  const essayPacket=await fetch('essays.enc.json',{cache:'no-store'}).then(r=>r.json());
+  const essayData=JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:decode(essayPacket.iv)},cryptoKey,decode(essayPacket.ciphertext))));
+  for(const e of essayData.essays){entries.set(e.id,{ref:e.code||e.school,t:e.title+' · Working draft / general feedback'});for(const v of e.versions||[])entries.set(e.id+'--'+v.id,{ref:e.code||e.school,t:e.title+' · '+v.label});}
+ }catch{}
  for(const section of data.sections){sectionNames.set(section.id,section.name);for(const e of section.entries){entries.set(e.id,e);origins.set(e.id,section.id);}}
 }
 function title(id){const e=entries.get(id);return e?`${e.ref} · ${e.t}${e.project?' — '+e.project:''}`:id;}
@@ -22,6 +27,7 @@ function render(review){
   for(const m of messages){const block=node('div','');block.className='comment';block.append(node('small',[(fields[m.field]||'Comment'),m.at?new Date(m.at).toLocaleString():'',m.editedAt?'Edited '+new Date(m.editedAt).toLocaleString():''].filter(Boolean).join(' · ')),node('p',m.text));article.append(block);}
  }
  if(!Object.values(d.threads||{}).some(m=>m.length))article.append(node('p','No comments yet.'));
+ if(Object.keys(d.essayDrafts||{}).length){article.append(node('h3','Essay working drafts'));for(const [id,draft]of Object.entries(d.essayDrafts)){const section=node('div','');section.className='comment';section.append(node('h4',title(id)),node('p',draft.text||''));article.append(section);}}
  const ranks=node('details','');ranks.append(node('summary','Rankings and entry verdicts'));
  for(const k of ['orderGen','orderOtt']){ranks.append(node('h3',k==='orderGen'?'General ranking':'Ottawa ranking'));for(const [category,ids] of Object.entries(d[k]||{})){ranks.append(node('h4',category));const list=node('ol','');for(const id of ids)list.append(node('li',title(id)));ranks.append(list);}}
  ranks.append(node('h3','Verdicts'));for(const [id,v] of Object.entries(d.verdicts||{}))if(v)ranks.append(node('p',title(id)+': '+v));article.append(ranks);
@@ -30,6 +36,7 @@ function render(review){
 const labelsReady=loadLabels().catch(()=>{});
 document.querySelector('#files').addEventListener('change',async e=>{await labelsReady;for(const f of e.target.files){try{render(JSON.parse(await f.text()));status.textContent='Review file loaded.';}catch{status.textContent='Could not read '+f.name;}}});
 async function load(){try{
+ if(['localhost','127.0.0.1','[::1]'].includes(location.hostname))throw Error('Local preview does not connect to the live feedback inbox.');
  if(!admin)throw Error('This inbox requires Imran’s private admin link. Reviewer links cannot open it.');
  status.textContent='Loading private feedback…';await labelsReady;
  const config=await fetch('config.json',{cache:'no-store'}).then(r=>r.json());if(!config.apiBase)throw Error('Online feedback storage is not connected yet.');

@@ -1,3 +1,5 @@
+import {createCommentThread} from './comments.js';
+import {createEssayWorkspace} from './essays.js';
 import {createSectionModel} from './review-model.js?v=2101a972a2eb';
 (function(){
   "use strict";
@@ -14,10 +16,10 @@ import {createSectionModel} from './review-model.js?v=2101a972a2eb';
     }catch(e){ return ""; }
   }
 
-  var sectionModel=null;
+  var sectionModel=null, essayWorkspace=null;
   var SECTIONS=[], DEADLINE=null, CAP=32, OTT_MAX=3, TITLE_LIMIT=48, TOTAL=0;
   var statusEl=$("#status"), tallyEl=$("#tally");
-  var state={name:"",view:"gen",orderGen:{},orderOtt:{},sectionMoves:{},verdicts:{},threads:{},notebook:""};
+  var state={name:"",view:"gen",orderGen:{},orderOtt:{},sectionMoves:{},verdicts:{},threads:{},essayDrafts:{},notebook:""};
   var started=false, ready=false;
   var host=$("#sections"), lists={}, caps={};
 
@@ -68,10 +70,14 @@ import {createSectionModel} from './review-model.js?v=2101a972a2eb';
     $("#notebook").hidden = false;
 
     ready = true;startBtn.disabled=false;
+    essayWorkspace=createEssayWorkspace({host:$("#essays"),state,canEdit:()=>started,onChange:queue,onLocked:locked});
+    window.ABS.loadEssays().then(data=>essayWorkspace.load(data)).catch(error=>essayWorkspace.error(error.message));
     $("#storage-note").textContent=window.ABS.cloud()?"Enter your name to start or return to your review. Feedback saves automatically.":"Your draft saves on this device. Online storage is not connected.";
     tally(); paintAll();
 
   }
+
+  function locked(){nameInput.focus();setStatus("Enter your name to open your review.","warn");}
 
   function cutCount(secId){
     var n=0, s=SECTIONS.filter(function(x){return x.id===secId;})[0];
@@ -173,93 +179,7 @@ import {createSectionModel} from './review-model.js?v=2101a972a2eb';
       });
       b.appendChild(vs);
 
-      var msgs=state.threads[e.id]||[];
-      var det=el("details","talk");
-      var sum=el("summary", null, msgs.length ? (msgs.length===1?"1 comment":msgs.length+" comments") : "Comment");
-      det.appendChild(sum);
-      var th=el("div","thread");
-
-      function updateCount(){var n=(state.threads[e.id]||[]).length;sum.textContent=n?(n===1?'1 comment':n+' comments'):'Comment';}
-      function bubble(m){
-        var bu=el("div","bub",m.text);
-        var w=el("span","when");
-        var n=(m.text||"").length;
-        var messageLimit=m.field==="description"?TITLE_LIMIT:LIM;
-        var fieldLabel=m.field?({description:"Description",qualifications:"Qualifications",competition:"Competition involved"}[m.field]+" · "):"";
-        w.textContent = fieldLabel + when(m.at) + (n<=messageLimit ? " · " + n : " · " + n + " (" + (n-messageLimit) + " over)");
-        if(m.editedAt)w.textContent+=' · edited';
-        bu.appendChild(w);
-        var actions=el('div','message-actions');
-        var edit=el('button','btn ghost','Edit'),unsend=el('button','btn ghost','Unsend');
-        edit.type=unsend.type='button';
-        edit.addEventListener('click',function(){
-          if(!started)return;
-          var editor=el('div','message-editor'),input=el('textarea');input.value=m.text;input.rows=3;
-          input.setAttribute('aria-label','Edit comment on '+e.t);
-          var saveEdit=el('button','btn','Save edit'),cancel=el('button','btn ghost','Cancel');
-          saveEdit.type=cancel.type='button';
-          saveEdit.addEventListener('click',function(){if(!input.value.trim())return;m.text=input.value.trim();m.editedAt=new Date().toISOString();editor.replaceWith(bubble(m));queue();});
-          cancel.addEventListener('click',function(){editor.replaceWith(bubble(m));});
-          editor.append(input,saveEdit,cancel);bu.replaceWith(editor);input.focus();
-        });
-        unsend.addEventListener('click',function(){
-          if(!started)return;
-          var messages=state.threads[e.id]||[],index=messages.indexOf(m);if(index<0)return;
-          messages.splice(index,1);
-          var notice=el('div','unsent','Comment unsent. '),undo=el('button','btn ghost','Undo');undo.type='button';
-          undo.addEventListener('click',function(){messages.splice(Math.min(index,messages.length),0,m);notice.replaceWith(bubble(m));updateCount();queue();});
-          notice.appendChild(undo);bu.replaceWith(notice);updateCount();queue();
-        });
-        actions.append(edit,unsend);bu.appendChild(actions);
-        return bu;
-      }
-      msgs.forEach(function(m){ th.appendChild(bubble(m)); });
-
-      var cw=el("div","cwrap");
-      var fieldChoice=null, activeLimit=LIM, activeLabel=LIMLABEL;
-      if(isAward){
-        var fieldLabel=el("label",null,"Feedback field");
-        fieldChoice=el("select");fieldChoice.setAttribute("aria-label","Feedback field for "+e.ref);
-        [["qualifications","Qualifications"],["description","Description (award name)"],["competition","Competition involved"]].forEach(function(pair){var o=el("option",null,pair[1]);o.value=pair[0];fieldChoice.appendChild(o);});
-        fieldChoice.addEventListener("change",function(){activeLimit=fieldChoice.value==="description"?TITLE_LIMIT:LIM;activeLabel=fieldChoice.options[fieldChoice.selectedIndex].text;counter();});
-        fieldLabel.appendChild(fieldChoice);cw.appendChild(fieldLabel);
-      }
-      var comp=el("div","composer");
-      var ta=el("textarea"); ta.rows=1; ta.placeholder="What do you think?";
-      ta.setAttribute("aria-label","Comment on "+e.t);
-      var send=el("button","send","↑"); send.type="button"; send.disabled=true;
-      send.setAttribute("aria-label","Send comment");
-
-      var cc=el("div","cc"); cc.setAttribute("aria-live","polite");
-      function counter(){
-        var n=ta.value.length;
-        cc.className="cc" + (n>activeLimit ? " over" : (n>activeLimit-20 && n>0 ? " near" : ""));
-        cc.textContent = n===0
-          ? activeLimit + " characters for " + activeLabel
-          : (n>activeLimit ? n + " / " + activeLimit + " · " + (n-activeLimit) + " over" : n + " / " + activeLimit);
-      }
-      counter();
-
-      ta.addEventListener("input",function(){ send.disabled=!ta.value.trim(); counter(); });
-      function post(){
-        var v=ta.value.trim(); if(!v) return;
-        if(!started){ setStatus("Enter your name first so I know who wrote this.","warn"); return; }
-        var m={id:crypto.randomUUID(),text:v,at:new Date().toISOString()};
-        if(fieldChoice)m.field=fieldChoice.value;
-        (state.threads[e.id]||(state.threads[e.id]=[])).push(m);
-        th.insertBefore(bubble(m), cw);
-        ta.value=""; send.disabled=true; counter();
-        var n=state.threads[e.id].length;
-        sum.textContent = n===1 ? "1 comment" : n+" comments";
-        queue();
-      }
-      send.addEventListener("click",post);
-      ta.addEventListener("keydown",function(ev){
-        if(ev.key==="Enter" && (ev.metaKey||ev.ctrlKey)){ ev.preventDefault(); post(); } });
-      comp.appendChild(ta); comp.appendChild(send);
-      cw.appendChild(comp); cw.appendChild(cc);
-      th.appendChild(cw);
-      det.appendChild(th); b.appendChild(det);
+      b.appendChild(createCommentThread({id:e.id,title:e.t,state,canEdit:()=>started,onChange:queue,onLocked:locked,limit:{characters:LIM},label:LIMLABEL,award:isAward,titleLimit:TITLE_LIMIT}));
 
       card.appendChild(b); list.appendChild(card);
     });
@@ -297,12 +217,17 @@ import {createSectionModel} from './review-model.js?v=2101a972a2eb';
   $("#v-gen").addEventListener("click",function(){ setView("gen"); queue(); });
   $("#v-ott").addEventListener("click",function(){ setView("ott"); queue(); });
 
+  function setWorkspace(which){
+    const essays=which==='essays';document.body.classList.toggle('essay-mode',essays);$("#sections").hidden=essays;$("#essays").hidden=!essays;$("#viewbox").hidden=essays||!started;
+    $("#workspace-abs").setAttribute('aria-pressed',String(!essays));$("#workspace-essays").setAttribute('aria-pressed',String(essays));
+  }
+  $("#workspace-abs").onclick=()=>setWorkspace('abs');$("#workspace-essays").onclick=()=>setWorkspace('essays');
   var nb=$("#nb");
   nb.addEventListener("input",function(){ state.notebook=nb.value; queue(); });
 
 
   var timer=null, saving=false, dirty=false, generation=0, retryDelay=1500, saveBlocked=false;
-  function snapshot(){return thaw({name:state.name,updatedAt:new Date().toISOString(),view:state.view,orderGen:state.orderGen,orderOtt:state.orderOtt,verdicts:state.verdicts,threads:state.threads,sectionMoves:state.sectionMoves,notebook:state.notebook});}
+  function snapshot(){return thaw({name:state.name,updatedAt:new Date().toISOString(),view:state.view,orderGen:state.orderGen,orderOtt:state.orderOtt,verdicts:state.verdicts,threads:state.threads,sectionMoves:state.sectionMoves,essayDrafts:state.essayDrafts,notebook:state.notebook});}
   function queue(){
     if(!started){setStatus("Enter your name above to start your review.","warn");return;}
     dirty=true;generation++;
@@ -319,7 +244,7 @@ import {createSectionModel} from './review-model.js?v=2101a972a2eb';
       saving=false;retryDelay=1500;
       if(generation!==savingGeneration){try{window.ABS.draft(snapshot());}catch{}return save();}
       dirty=false;
-      setStatus(result.local?"Saved on this device only. Online saving is unavailable.":"Saved",result.local?"warn":"ok");
+      setStatus(result.local?"Saved on this device · local preview":"Saved","ok");
     }catch(error){
       saving=false;
       // Never retry authorization failures or overwrite a conflicting revision.
@@ -344,12 +269,12 @@ import {createSectionModel} from './review-model.js?v=2101a972a2eb';
       if(!d?.name&&!n){startBtn.disabled=false;nameInput.focus();setStatus("Enter a name for your feedback.","warn");return;}
       state.name=d?.name||n;nameInput.value=state.name;nameInput.readOnly=true;startBtn.textContent="Signed in";
 
-      if(d){state.verdicts=thaw(d.verdicts)||{};state.threads=thaw(d.threads)||{};state.notebook=d.notebook||"";nb.value=state.notebook;
+      if(d){state.essayDrafts=thaw(d.essayDrafts)||{};state.verdicts=thaw(d.verdicts)||{};state.threads=thaw(d.threads)||{};state.notebook=d.notebook||"";nb.value=state.notebook;
         state.sectionMoves=thaw(d.sectionMoves)||{};state.orderGen=thaw(d.orderGen)||{};state.orderOtt=thaw(d.orderOtt)||{};applySections();
         state.view=d.view==='ott'?'ott':'gen';
       }
-      started=true;startBtn.disabled=true;$("#viewbox").hidden=false;$("#review-tools").hidden=false;tally();setView(state.view);
-      $("#storage-note").textContent=window.ABS.cloud()?"Changes save automatically. Return to this same site and enter the same name to continue.":"Online saving is unavailable. Changes remain on this device until the connection is restored.";
+      started=true;essayWorkspace?.render();startBtn.disabled=true;$("#viewbox").hidden=!$("#essays").hidden;$("#review-tools").hidden=false;tally();setView(state.view);
+      $("#storage-note").textContent=window.ABS.cloud()?"Changes save automatically. Return to this same site and enter the same name to continue.":"Local preview: drafts and comments save only in this browser. Nothing is sent to the live site.";
       $("#close-review").hidden=false;queue();
     }catch(error){startBtn.disabled=false;setStatus(error.message,"warn");$("#review-tools").hidden=false;}
   }

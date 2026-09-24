@@ -67,6 +67,13 @@ export default {async fetch(request,env){
   }
   const body=await readBody(request,MAX_BYTES);
   if(!validReview(body.data)||!Number.isInteger(body.revision)||body.revision<0)return out({error:'Invalid review'},400);
+  // A pre-essay client rebuilds payloads without essayDrafts. Do not let that
+  // silently erase drafts or version-specific feedback after a fresh login.
+  if(existing){
+   const previous=JSON.parse(existing.payload);
+   const hasEssayWork=Object.keys(previous.essayDrafts||{}).length||Object.keys(previous.threads||{}).some(k=>k.startsWith('essay-')&&previous.threads[k]?.length);
+   if(hasEssayWork&&!Object.hasOwn(body.data,'essayDrafts'))return out({error:'This review contains essay feedback. Refresh the site before saving from this older tab.'},409);
+  }
   const payload=JSON.stringify(body.data), now=new Date().toISOString();
   if(!existing){
    const key=request.headers.get('X-Sketch-Key');

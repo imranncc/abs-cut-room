@@ -66,3 +66,23 @@ test('new name registration is repeatable across devices and separates names',as
  assert.equal((await request('POST','/login',{name:' '})).status,400);
  assert.equal((await request('POST','/login',{name:'x'.repeat(101)})).status,400);
 });
+
+test('essay drafts round-trip with existing ABS rankings and independent threads',async()=>{
+ const essayId=crypto.randomUUID(),payload={...data,name:'Essay persistence QA',essayDrafts:{'essay-tmu-q1':{text:'First draft',baseVersion:'v1'}},threads:{...data.threads,'essay-tmu-q1':[{id:'essay-msg',text:'Essay feedback',field:'suggestion',at:'2026-09-23'}]}};
+ assert.equal((await request('PUT','/reviews/'+essayId,{data:payload,revision:0})).status,200);
+ const saved=await(await request('GET','/reviews/'+essayId)).json();assert.deepEqual(saved.data,payload);
+ const edit={...saved.data,essayDrafts:{'essay-tmu-q1':{text:'Revised draft',baseVersion:'v1'}}};
+ assert.equal((await request('PUT','/reviews/'+essayId,{data:edit,revision:1})).status,200);
+ const reopened=await(await request('GET','/reviews/'+essayId)).json();assert.deepEqual(reopened.data.threads,payload.threads);assert.deepEqual(reopened.data.orderGen,data.orderGen);assert.equal(reopened.data.essayDrafts['essay-tmu-q1'].text,'Revised draft');
+});
+
+
+test('an older client cannot erase published-version feedback or reviewer essay drafts',async()=>{
+ const id=crypto.randomUUID(),payload={...data,essayDrafts:{'essay-tmu-q1':{text:'Keep my edits',baseVersion:'v4'}},threads:{...data.threads,'essay-tmu-q1--v7':[{id:'v7-note',text:'Latest feedback'}],'essay-tmu-q1--v4':[{id:'v4-note',text:'Earlier feedback'}]}};
+ assert.equal((await request('PUT','/reviews/'+id,{data:payload,revision:0})).status,200);
+ assert.equal((await request('PUT','/reviews/'+id,{data,revision:1})).status,409);
+ const restored=await(await request('GET','/reviews/'+id)).json();assert.deepEqual(restored.data,payload);
+ const edited=structuredClone(payload);edited.threads['essay-tmu-q1--v7']=[];
+ assert.equal((await request('PUT','/reviews/'+id,{data:edited,revision:1})).status,200);
+ const final=await(await request('GET','/reviews/'+id)).json();assert.deepEqual(final.data.threads['essay-tmu-q1--v7'],[]);assert.equal(final.data.threads['essay-tmu-q1--v4'].length,1);
+});

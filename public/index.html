@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset=utf8><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}.entries .entry{grid-template-columns:160px minmax(0,1fr)}.section-label{display:block;width:100%;margin-top:12px;font-size:12px;color:var(--ink-3)}.section-select{font-size:13px;width:100%;padding:8px 4px} .section-select:disabled{opacity:.5}.section-unlock{font-size:12px;padding:6px 4px;white-space:normal;margin-top:4px}@media(max-width:600px){.entries .entry{grid-template-columns:88px minmax(0,1fr)}.section-select{font-size:11px}.section-label{font-size:11px}}select{display:block;width:100%;max-width:100%;font:inherit;color:inherit;background:var(--ground,#fff);padding:8px;border:1px solid #d2d2d7;border-radius:8px;margin:6px 0 10px}.message-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.bub .message-actions .btn{background:#fff;color:#0057b8;border:1px solid #fff}.bub .message-actions .btn:hover{background:#edf5ff;filter:none}.bub .message-actions .btn:focus-visible{outline:2px solid #fff;outline-offset:3px}.message-actions .btn,.unsent .btn,.message-editor .btn{padding:6px 12px;font-size:14px}.message-editor textarea{display:block;width:100%;box-sizing:border-box;margin:12px 0}.unsent{padding:12px;color:#666}#return-link{width:100%;box-sizing:border-box;font:13px system-ui;margin:8px 0;padding:10px}#return-link-box{margin-top:16px}</style></head><body>
+<!doctype html><html lang="en"><head><meta charset=utf8><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}.entries .entry{grid-template-columns:160px minmax(0,1fr)}.section-label{display:block;width:100%;margin-top:12px;font-size:12px;color:var(--ink-3)}.section-select{font-size:13px;width:100%;padding:8px 4px} .section-select:disabled{opacity:.5}.section-unlock{font-size:12px;padding:6px 4px;white-space:normal;margin-top:4px}@media(max-width:600px){.entries .entry{grid-template-columns:88px minmax(0,1fr)}.section-select{font-size:11px}.section-label{font-size:11px}}select{display:block;width:100%;max-width:100%;font:inherit;color:inherit;background:var(--ground,#fff);padding:8px;border:1px solid #d2d2d7;border-radius:8px;margin:6px 0 10px}.message-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.bub .message-actions .btn{background:#fff;color:#0057b8;border:1px solid #fff}.bub .message-actions .btn:hover{background:#edf5ff;filter:none}.bub .message-actions .btn:focus-visible{outline:2px solid #fff;outline-offset:3px}.message-actions .btn,.unsent .btn,.message-editor .btn{padding:6px 12px;font-size:14px}.message-editor textarea{display:block;width:100%;box-sizing:border-box;margin:12px 0}.unsent{padding:12px;color:#666}#return-link{width:100%;box-sizing:border-box;font:13px system-ui;margin:8px 0;padding:10px}#return-link-box{margin-top:16px}</style><link rel="stylesheet" href="essays.css"></head><body>
 <title>ABS Cut Room</title>
 <style>
   :root{
@@ -219,7 +219,7 @@
 <header class="masthead">
   <div class="wrap">
     <p class="eyebrow">OMSAS 2027 · NOSM · uOttawa · TMU</p>
-    <h1>Tell me what to cut.</h1>
+    <h1>Make every word count.</h1>
     <p class="lede narrow" id="lede">Reorder them, mark the ones you would drop, and say what you think under any entry.</p>
     <div class="facts">
       <div class="fact"><b class="tnum" id="f-days">—</b><span>days to deadline</span></div>
@@ -230,6 +230,7 @@
   </div>
 </header>
 
+<nav class="wrap workspace-nav" aria-label="Review workspace"><div class="switch"><button id="workspace-abs" aria-pressed="true" type="button">ABS activities</button><button id="workspace-essays" aria-pressed="false" type="button">Essays &amp; circumstances</button></div></nav>
 <section id="who">
   <div class="wrap">
     <div class="gate">
@@ -251,6 +252,8 @@
 </section>
 
 <main id="sections"><div class="wrap boot" id="boot">Loading the sketch…</div></main>
+
+<div id="essays" hidden><div class="wrap boot">Loading essays…</div></div>
 
 <section id="notebook" hidden>
   <div class="wrap">
@@ -279,6 +282,6 @@
   </div>
 </footer>
 
-<script src="storage.js?v=a6afbb9f6c4c"></script><script type="module" src="app.js?v=791972c2b933"></script>
+<script src="storage.js?v=essays-v7-20260924"></script><script type="module" src="app.js?v=essays-v7-20260924"></script>
 
 </body></html>

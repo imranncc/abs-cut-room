@@ -11,16 +11,25 @@
  let identity=params.has('review')&&params.has('token')?{id:params.get('review'),token:params.get('token')}:read('abs-review-identity');
  if(!identity)identity={id:crypto.randomUUID(),token:token()};
  try{write('abs-review-identity',identity);}catch{}
+ const localPreview=['localhost','127.0.0.1','[::1]'].includes(location.hostname);
  let config={apiBase:''}, revision=0;
  let draftKey='abs-review-'+identity.id;
- const configPromise=fetch('config.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('Configuration unavailable');return r.json();}).then(c=>{config=c;return c;});
+ const configPromise=fetch('config.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('Configuration unavailable');return r.json();}).then(c=>{config=localPreview?{...c,apiBase:''}:c;return config;});
  function apiUrl(path){return config.apiBase.replace(/\/$/,'')+path;}
  async function api(method,payload){
   const response=await fetch(apiUrl('/reviews/'+identity.id),{method,headers:{'Authorization':'Bearer '+identity.token,'X-Sketch-Key':key||'','Content-Type':'application/json'},body:payload?JSON.stringify(payload):undefined});
   if(response.status===404&&method==='GET')return null;
   const data=await response.json().catch(()=>({error:'Feedback service unavailable'}));if(!response.ok){const e=Error(data.error||'Save failed');e.status=response.status;throw e;}return data;
  }
+ async function decryptFile(file){
+  await configPromise;if(!key)throw Error('Open the private invitation link Imran sent you.');
+  const packet=await fetch(file,{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('The essay file is unavailable.');return r.json();});
+  const cryptoKey=await crypto.subtle.importKey('raw',un64(key),'AES-GCM',false,['decrypt']);
+  const bytes=await crypto.subtle.decrypt({name:'AES-GCM',iv:un64(packet.iv)},cryptoKey,un64(packet.ciphertext));
+  return JSON.parse(new TextDecoder().decode(bytes));
+ }
  window.ABS={
+  loadEssays(){return decryptFile('essays.enc.json');},
   async loadSketch(){
    await configPromise;
    if(!key)throw Error('Open the private invitation link Imran sent you.');
@@ -41,6 +50,10 @@
     identity={id:login.id,token:login.token};draftKey='abs-review-'+identity.id;
     try{write('abs-review-identity',identity);}catch{}
     history.replaceState(null,'',location.origin+location.pathname+'#'+new URLSearchParams({key:key||''}));
+   }
+   if(!config.apiBase&&name){
+    const normalized=name.normalize('NFKC').trim().replace(/\s+/g,' ').toLowerCase();
+    draftKey='abs-local-review-'+encodeURIComponent(normalized);
    }
    const local=read(draftKey);
    if(!config.apiBase){revision=local?.revision||0;return local?.data||null;}
@@ -63,7 +76,7 @@
   link(){const p=new URLSearchParams({key:key||'',review:identity.id,token:identity.token});return location.origin+location.pathname+'#'+p;},
   close(){
    const local=read(draftKey);if(local?.dirty)throw Error('Save your changes before closing the review.');
-   localStorage.removeItem(draftKey);localStorage.removeItem('abs-review-identity');localStorage.removeItem('absName');
+   if(config.apiBase)localStorage.removeItem(draftKey);localStorage.removeItem('abs-review-identity');localStorage.removeItem('absName');
    history.replaceState(null,'',location.origin+location.pathname+'#'+new URLSearchParams({key:key||''}));location.reload();
   },
   download(data){

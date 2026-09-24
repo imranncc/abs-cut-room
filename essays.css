@@ -3,3 +3,5 @@
 .essay-mode .masthead .wrap{padding-block:28px 24px}.essay-mode .masthead .facts,.essay-mode #lede{display:none}.essay-mode #who .wrap{padding-block:24px}.essay-mode #tally{display:none}.essay-notice summary{cursor:pointer}.essay-mode .masthead h1{font-size:36px}
 
 .essay-version{display:block;width:100%;max-width:100%;min-height:46px;margin-top:8px;padding:10px 12px;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--hair);border-radius:8px}.essay-editor{width:100%;box-sizing:border-box}
+
+.essay-workspace > .switch{margin-bottom:24px}#access-message{font-size:15px;line-height:1.5}#invitation-link{margin-top:8px}

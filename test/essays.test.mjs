@@ -33,7 +33,7 @@ test('NOSM PDF caps apply even below approximate word guidance',()=>{
 
 test('local preview never logs into cloud; name-specific essays and comments survive sign out',async()=>{
  const data=new Map(),requests=[];let reloads=0;
- const context=vm.createContext({crypto:crypto.webcrypto,URLSearchParams,TextDecoder,TextEncoder,Uint8Array,Date,JSON,console,
+ const context=vm.createContext({AbortController,setTimeout,clearTimeout,crypto:crypto.webcrypto,URLSearchParams,TextDecoder,TextEncoder,Uint8Array,Date,JSON,console,
   location:{hostname:'127.0.0.1',hash:'',origin:'http://127.0.0.1:4173',pathname:'/',reload(){reloads++;}},
   localStorage:{getItem:k=>data.get(k)||null,setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)},
   history:{replaceState(){}},btoa:s=>Buffer.from(s,'binary').toString('base64'),atob:s=>Buffer.from(s,'base64').toString('binary'),

@@ -1,5 +1,5 @@
 import {createCommentThread} from './comments.js';
-import {createEssayWorkspace} from './essays.js';
+import {createEssayWorkspace} from './essays.js?v=review-clean-20260924';
 import {createSectionModel} from './review-model.js?v=2101a972a2eb';
 (function(){
   "use strict";
@@ -25,12 +25,29 @@ import {createSectionModel} from './review-model.js?v=2101a972a2eb';
 
   function setStatus(m,k){ statusEl.textContent=m; statusEl.className="status"+(k?" "+k:""); }
 
-  window.ABS.loadSketch()
-    .then(build)
-    .catch(function(error){
-      $("#boot").textContent=error.message;
-      setStatus("Could not load the sketch.","warn");
-    });
+  let loading=null,loadFailure=null;
+  function showLoadError(error){
+    loadFailure=error;$("#access-recovery").hidden=false;
+    $("#access-message").textContent=error.message;
+    $("#invitation-fields").hidden=!['invitation','invalid-invitation'].includes(error.code);
+    $("#storage-note").textContent='';
+    if($("#boot"))$("#boot").textContent='';
+    $("#essays").textContent='';
+    setStatus('Review not open.','warn');
+  }
+  async function loadApplication(invitation){
+    if(loading)return loading;
+    loading=(async()=>{
+      loadFailure=null;$("#access-recovery").hidden=true;$("#storage-note").textContent='Loading…';
+      try{
+        const data=invitation?await window.ABS.unlock(invitation):await window.ABS.loadSketch();
+        build(data);setStatus('Enter your name to open your review.');
+        return true;
+      }catch(error){showLoadError(error);return false;}
+      finally{loading=null;}
+    })();
+    return loading;
+  }
 
   function build(data){
     SECTIONS = data.sections || [];
@@ -39,14 +56,7 @@ import {createSectionModel} from './review-model.js?v=2101a972a2eb';
     DEADLINE = new Date(m.deadline || "2026-10-01T16:30:00-04:00");
     CAP = m.cap || 32; OTT_MAX = m.ottMax || 3; TITLE_LIMIT = m.titleLimit || 48;
 
-    SECTIONS.forEach(function(s){ TOTAL += s.entries.length; });
-    $("#f-total").textContent = TOTAL;
-    $("#f-cap").textContent = CAP;
-    $("#f-days").textContent = Math.max(0, Math.ceil((DEADLINE - new Date())/86400000));
-    $("#lede").textContent = TOTAL > CAP
-      ? TOTAL + " activities, " + CAP + " slots. Reorder them, mark the ones you would drop, and say what you think under any entry."
-      : "The approved " + TOTAL + ". Reorder them, say what you think under any entry, and tell me where the wording is weak.";
-    if(TOTAL > CAP) $("#fact-cap").classList.add("alarm");
+    TOTAL=SECTIONS.reduce((total,section)=>total+section.entries.length,0);
 
     SECTIONS.forEach(function(s){
       var ids = s.entries.map(function(e){ return e.id; });
@@ -61,8 +71,6 @@ import {createSectionModel} from './review-model.js?v=2101a972a2eb';
       row.appendChild(el("h2",null,sec.name));
       var cap = el("span","cap"); caps[sec.id] = cap; row.appendChild(cap);
       head.appendChild(row);
-      if(sec.blurb) head.appendChild(el("p","lede narrow",sec.blurb));
-      if(sec.note) head.appendChild(el("p","flag",sec.note));
       w.appendChild(head);
       var list = el("div","entries"); lists[sec.id] = list; w.appendChild(list);
       s.appendChild(w); host.appendChild(s);
@@ -72,7 +80,7 @@ import {createSectionModel} from './review-model.js?v=2101a972a2eb';
     ready = true;startBtn.disabled=false;
     essayWorkspace=createEssayWorkspace({host:$("#essays"),state,canEdit:()=>started,onChange:queue,onLocked:locked});
     window.ABS.loadEssays().then(data=>essayWorkspace.load(data)).catch(error=>essayWorkspace.error(error.message));
-    $("#storage-note").textContent=window.ABS.cloud()?"Enter your name to start or return to your review. Feedback saves automatically.":"Your draft saves on this device. Online storage is not connected.";
+    $("#storage-note").textContent=window.ABS.cloud()?"Feedback saves automatically.":"Local preview.";
     tally(); paintAll();
 
   }
@@ -162,9 +170,6 @@ import {createSectionModel} from './review-model.js?v=2101a972a2eb';
       if(isAward)b.appendChild(el("p","eyebrow","Competition involved"));
       if(e.extra) b.appendChild(el("p","meta",e.extra));
       if(e.hrs) b.appendChild(el("p","hrs",e.hrs));
-      if(e.ctx) b.appendChild(el("p","ctx",e.ctx));
-      if(e.ask) b.appendChild(el("p","ask",e.ask));
-      if(e.flag) b.appendChild(el("p","flag",e.flag));
 
       var vs=el("div","verdicts");
       [["strong","Strongest"],["keep","Keep"],["unsure","Not sure"],["cut","Leave it out"]].forEach(function(p){
@@ -209,9 +214,7 @@ import {createSectionModel} from './review-model.js?v=2101a972a2eb';
     state.view=v;
     $("#v-gen").setAttribute("aria-pressed", v==="gen"?"true":"false");
     $("#v-ott").setAttribute("aria-pressed", v==="ott"?"true":"false");
-    noteEl.textContent = v==="gen"
-      ? "TMU and NOSM read the whole sketch, so this order is about which entries lead. Comments are shared between both views."
-      : "uOttawa selects the top three in each category, though it can still review the wider sketch. This ranking is kept separately from the general one; the entries and comments are the same.";
+    noteEl.textContent='';
     paintAll();
   }
   $("#v-gen").addEventListener("click",function(){ setView("gen"); queue(); });
@@ -257,13 +260,19 @@ import {createSectionModel} from './review-model.js?v=2101a972a2eb';
   window.addEventListener("online",function(){if(dirty&&!saveBlocked){clearTimeout(timer);save();}});
   window.addEventListener("beforeunload",function(ev){if(started&&dirty){ev.preventDefault();ev.returnValue="";}});
   var nameInput=$("#rev-name"), startBtn=$("#rev-start");
+  nameInput.value=new URLSearchParams(location.hash.slice(1)).get("name")||"";
 
   async function begin(){
-    if(!ready){setStatus("Open the invitation link and wait for the sketch to load.","warn");return;}
+    if(!ready){
+      if(!await loadApplication()){
+        if(!$("#invitation-fields").hidden)$("#invitation-link").focus();
+        return;
+      }
+    }
     const n=nameInput.value.trim();if(!n){nameInput.focus();setStatus("Enter your name to open your review.","warn");return;}
     if(n.length>100){setStatus("Please use a shorter name.","warn");return;}
     if(started){setStatus("Your review is open. Changes save automatically.");return;}
-    startBtn.disabled=true;setStatus("Opening your review…");
+    startBtn.disabled=true;startBtn.textContent="Opening…";setStatus("Opening your review…");$("#storage-note").textContent="Opening your review…";
     try{
       const d=await window.ABS.open(n);
       if(!d?.name&&!n){startBtn.disabled=false;nameInput.focus();setStatus("Enter a name for your feedback.","warn");return;}
@@ -274,15 +283,23 @@ import {createSectionModel} from './review-model.js?v=2101a972a2eb';
         state.view=d.view==='ott'?'ott':'gen';
       }
       started=true;essayWorkspace?.render();startBtn.disabled=true;$("#viewbox").hidden=!$("#essays").hidden;$("#review-tools").hidden=false;tally();setView(state.view);
-      $("#storage-note").textContent=window.ABS.cloud()?"Changes save automatically. Return to this same site and enter the same name to continue.":"Local preview: drafts and comments save only in this browser. Nothing is sent to the live site.";
+      $("#storage-note").textContent=window.ABS.cloud()?"Feedback saves automatically.":"Local preview.";
       $("#close-review").hidden=false;queue();
-    }catch(error){startBtn.disabled=false;setStatus(error.message,"warn");$("#review-tools").hidden=false;}
+    }catch(error){startBtn.disabled=false;startBtn.textContent="Open my review";setStatus(error.message,"warn");$("#storage-note").textContent=error.message;$("#review-tools").hidden=false;}
   }
   $("#close-review").addEventListener('click',async function(){
     if(saving){setStatus('Wait for your review to finish saving before closing.');return;}
     if(dirty)await save();if(dirty)return;
     try{window.ABS.close();}catch(error){setStatus(error.message,'warn');}
   });
+  $("#retry-load").onclick=()=>loadApplication();
+  $("#unlock-review").onclick=async()=>{
+    const button=$("#unlock-review");button.disabled=true;
+    try{if(await loadApplication($("#invitation-link").value.trim())){$("#invitation-link").value='';if(nameInput.value.trim())await begin();}}finally{button.disabled=false;}
+  };
+  $("#invitation-link").onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();$("#unlock-review").click();}};
+  window.addEventListener('hashchange',()=>{if(!ready&&new URLSearchParams(location.hash.slice(1)).has('key'))loadApplication(location.href);});
+  loadApplication();
   startBtn.addEventListener("click",begin);
   nameInput.addEventListener("keydown",function(ev){ if(ev.key==="Enter"){ ev.preventDefault(); begin(); } });
 })();

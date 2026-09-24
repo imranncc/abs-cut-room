@@ -1,5 +1,5 @@
-<!doctype html><html lang="en"><head><meta charset=utf8><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}.entries .entry{grid-template-columns:160px minmax(0,1fr)}.section-label{display:block;width:100%;margin-top:12px;font-size:12px;color:var(--ink-3)}.section-select{font-size:13px;width:100%;padding:8px 4px} .section-select:disabled{opacity:.5}.section-unlock{font-size:12px;padding:6px 4px;white-space:normal;margin-top:4px}@media(max-width:600px){.entries .entry{grid-template-columns:88px minmax(0,1fr)}.section-select{font-size:11px}.section-label{font-size:11px}}select{display:block;width:100%;max-width:100%;font:inherit;color:inherit;background:var(--ground,#fff);padding:8px;border:1px solid #d2d2d7;border-radius:8px;margin:6px 0 10px}.message-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.bub .message-actions .btn{background:#fff;color:#0057b8;border:1px solid #fff}.bub .message-actions .btn:hover{background:#edf5ff;filter:none}.bub .message-actions .btn:focus-visible{outline:2px solid #fff;outline-offset:3px}.message-actions .btn,.unsent .btn,.message-editor .btn{padding:6px 12px;font-size:14px}.message-editor textarea{display:block;width:100%;box-sizing:border-box;margin:12px 0}.unsent{padding:12px;color:#666}#return-link{width:100%;box-sizing:border-box;font:13px system-ui;margin:8px 0;padding:10px}#return-link-box{margin-top:16px}</style><link rel="stylesheet" href="essays.css"></head><body>
-<title>ABS Cut Room</title>
+<!doctype html><html lang="en"><head><meta charset=utf8><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}.entries .entry{grid-template-columns:160px minmax(0,1fr)}.section-label{display:block;width:100%;margin-top:12px;font-size:12px;color:var(--ink-3)}.section-select{font-size:13px;width:100%;padding:8px 4px} .section-select:disabled{opacity:.5}.section-unlock{font-size:12px;padding:6px 4px;white-space:normal;margin-top:4px}@media(max-width:600px){.entries .entry{grid-template-columns:88px minmax(0,1fr)}.section-select{font-size:11px}.section-label{font-size:11px}}select{display:block;width:100%;max-width:100%;font:inherit;color:inherit;background:var(--ground,#fff);padding:8px;border:1px solid #d2d2d7;border-radius:8px;margin:6px 0 10px}.message-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.bub .message-actions .btn{background:#fff;color:#0057b8;border:1px solid #fff}.bub .message-actions .btn:hover{background:#edf5ff;filter:none}.bub .message-actions .btn:focus-visible{outline:2px solid #fff;outline-offset:3px}.message-actions .btn,.unsent .btn,.message-editor .btn{padding:6px 12px;font-size:14px}.message-editor textarea{display:block;width:100%;box-sizing:border-box;margin:12px 0}.unsent{padding:12px;color:#666}#return-link{width:100%;box-sizing:border-box;font:13px system-ui;margin:8px 0;padding:10px}#return-link-box{margin-top:16px}</style><link rel="stylesheet" href="essays.css?v=review-clean-20260924"></head><body>
+<title>Application review</title>
 <style>
   :root{
     --ground:#ffffff; --surface:#f5f5f7; --surface-2:#fafafc;
@@ -216,20 +216,6 @@
   }
 </style>
 
-<header class="masthead">
-  <div class="wrap">
-    <p class="eyebrow">OMSAS 2027 · NOSM · uOttawa · TMU</p>
-    <h1>Make every word count.</h1>
-    <p class="lede narrow" id="lede">Reorder them, mark the ones you would drop, and say what you think under any entry.</p>
-    <div class="facts">
-      <div class="fact"><b class="tnum" id="f-days">—</b><span>days to deadline</span></div>
-      <div class="fact"><b class="tnum" id="f-total">—</b><span>activities</span></div>
-      <div class="fact" id="fact-cap"><b class="tnum" id="f-cap">—</b><span>slots</span></div>
-      <div class="fact"><b class="tnum">3</b><span>uOttawa top per category</span></div>
-    </div>
-  </div>
-</header>
-
 <nav class="wrap workspace-nav" aria-label="Review workspace"><div class="switch"><button id="workspace-abs" aria-pressed="true" type="button">ABS activities</button><button id="workspace-essays" aria-pressed="false" type="button">Essays &amp; circumstances</button></div></nav>
 <section id="who">
   <div class="wrap">
@@ -238,10 +224,19 @@
         <label for="rev-name">Your name</label>
         <input type="text" id="rev-name" placeholder="Your name" autocomplete="name">
       </div>
-      <button class="btn" id="rev-start" disabled>Open my review</button>
+      <button class="btn" id="rev-start">Open my review</button>
     </div>
-    <p class="meta" style="margin-top:14px">Use the same name each time. Anyone who enters that name can access that review.</p>
-    <p class="meta" id="storage-note" style="margin-top:12px">Loading private feedback…</p><div id="review-tools" hidden style="margin-top:16px"><button class="btn ghost" id="close-review" hidden >Sign out</button></div><div id="viewbox" hidden style="margin-top:30px">
+    <p class="meta" style="margin-top:14px">Return using the same name.</p>
+    <p class="meta" id="storage-note" role="status" style="margin-top:12px">Loading…</p>
+    <div id="access-recovery" hidden style="margin-top:16px">
+      <p id="access-message" role="alert"></p>
+      <div id="invitation-fields" hidden style="margin-top:12px">
+        <label for="invitation-link">Private invitation link</label>
+        <input type="text" id="invitation-link" placeholder="Paste the complete invitation link" autocomplete="off" autocapitalize="none" spellcheck="false">
+        <button class="btn" type="button" id="unlock-review" style="margin-top:12px">Unlock review</button>
+      </div>
+      <button class="btn ghost" type="button" id="retry-load" style="margin-top:12px">Try again</button>
+    </div><div id="review-tools" hidden style="margin-top:16px"><button class="btn ghost" id="close-review" hidden >Sign out</button></div><div id="viewbox" hidden style="margin-top:30px">
       <div class="switch" role="group" aria-label="Which ranking">
         <button type="button" id="v-gen" aria-pressed="true">General — TMU &amp; NOSM</button>
         <button type="button" id="v-ott" aria-pressed="false">uOttawa — top 3 only</button>
@@ -251,16 +246,14 @@
   </div>
 </section>
 
-<main id="sections"><div class="wrap boot" id="boot">Loading the sketch…</div></main>
+<main id="sections"><div class="wrap boot" id="boot">Loading application…</div></main>
 
 <div id="essays" hidden><div class="wrap boot">Loading essays…</div></div>
 
 <section id="notebook" hidden>
   <div class="wrap">
     <div class="sechead">
-      <p class="eyebrow">Notebook</p>
-      <h2>Anything that did not fit under an entry.</h2>
-      <p class="lede narrow">What is missing, what repeats, what you would say if you were reading this cold. Half-formed is fine.</p>
+      <h2>General feedback</h2>
     </div>
     <div class="narrow"><textarea id="nb" aria-label="Notebook"></textarea></div>
   </div>
@@ -274,14 +267,8 @@
   </div>
 </div>
 
-<footer>
-  <div class="wrap">
-    <p class="meta narrow">Descriptions are the lines that go into the application. Entries without one have not been written yet. Nothing here is submitted anywhere.</p>
-    <p class="meta narrow">A small amber dot marks an hours or date figure still being checked against the record. The figure shown is what is on file; treat it as provisional rather than wrong.</p>
-    <p class="meta narrow">If you want to suggest wording, write it as its own message. The count under the box measures it against the real limit for that field, so you can see whether it fits. Activity titles are capped at 48 characters.</p>
-  </div>
-</footer>
 
-<script src="storage.js?v=essays-v7-20260924"></script><script type="module" src="app.js?v=essays-v7-20260924"></script>
+
+<script src="storage.js?v=review-clean-20260924"></script><script type="module" src="app.js?v=review-clean-20260924"></script>
 
 </body></html>

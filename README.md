@@ -55,3 +55,10 @@ The earlier deployment hold was superseded by the September 24 request to add al
 User authorized publishing all saved drafts. The encrypted source now holds 12 responses with eight saved versions each (the initial site seed plus V1–V7), alongside last year’s originals. V7 is the default. Published versions are immutable in the UI; each reviewer can keep a separate working draft. Version comment keys use `essay-id--version`; the original essay ID retains earlier general feedback and working-draft comments. No reviewer data migration or reset is performed.
 
 The Worker rejects a pre-essay client save with HTTP 409 when it would discard existing essay work. Refresh that older tab to use the updated client. Historical drafts may exceed current limits or contain superseded facts; only the latest responses must pass the packer’s hard limits.
+
+
+### Review cleanup and invitation recovery
+
+The public review interface omits internal drafting notes, section commentary, revision explanations, and promotional headings. Application text and existing reviewer data are unchanged. Always share the full private invitation, including its `#key=` fragment: the base URL alone cannot unlock a fresh browser. Optional `name` in the fragment prefills the name field without auto-opening a review.
+
+Missing or invalid access now displays beside the name field, with a full-invitation input. Open-review is no longer left disabled after a loading failure. Network requests time out after 15 seconds, and configuration loading can retry. Invalid pasted invitations never replace saved valid access. Tests cover fresh-browser recovery, returning review preservation, unavailable local storage, and connection failures.

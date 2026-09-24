@@ -12,7 +12,7 @@ async function loadLabels(){
  try{
   const essayPacket=await fetch('essays.enc.json',{cache:'no-store'}).then(r=>r.json());
   const essayData=JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:decode(essayPacket.iv)},cryptoKey,decode(essayPacket.ciphertext))));
-  for(const e of essayData.essays){entries.set(e.id,{ref:e.code||e.school,t:e.title+' · Working draft / general feedback'});for(const v of e.versions||[])entries.set(e.id+'--'+v.id,{ref:e.code||e.school,t:e.title+' · '+v.label});}
+  for(const e of essayData.essays){entries.set(e.id,{ref:e.code||e.school,t:e.title+' · Working draft / general feedback'});entries.set(e.commentThreadId||e.id+'--v7',{ref:e.code||e.school,t:e.title});for(const v of e.versions||[])entries.set(e.id+'--'+v.id,{ref:e.code||e.school,t:e.title+' · '+v.label});}
  }catch{}
  for(const section of data.sections){sectionNames.set(section.id,section.name);for(const e of section.entries){entries.set(e.id,e);origins.set(e.id,section.id);}}
 }

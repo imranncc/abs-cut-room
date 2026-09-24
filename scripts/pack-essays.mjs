@@ -19,8 +19,10 @@ for(const e of data.essays){
   console.warn('Over-limit review draft preserved: '+e.id);
  }
 }
+// Publish only the current response. History and drafting notes stay in private files.
+const published={version:data.version,essays:data.essays.filter(e=>['TMU','NOSM'].includes(e.school)).map(e=>({id:e.id,code:e.code,school:e.school,title:e.title,prompt:e.prompt,limit:e.limit,draft:e.draft,version:e.version,commentThreadId:e.commentThreadId||e.id+'--v7'}))};
 const cryptoKey=await crypto.subtle.importKey('raw',Buffer.from(key,'base64url'),'AES-GCM',false,['encrypt']);
 const iv=crypto.getRandomValues(new Uint8Array(12));
-const bytes=await crypto.subtle.encrypt({name:'AES-GCM',iv},cryptoKey,new TextEncoder().encode(JSON.stringify(data)));
+const bytes=await crypto.subtle.encrypt({name:'AES-GCM',iv},cryptoKey,new TextEncoder().encode(JSON.stringify(published)));
 await fs.writeFile('public/essays.enc.json',JSON.stringify({iv:Buffer.from(iv).toString('base64url'),ciphertext:Buffer.from(bytes).toString('base64url')}));
 console.log('Encrypted '+data.essays.length+' essay responses. No publishing performed.');

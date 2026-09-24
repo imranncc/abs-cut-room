@@ -1,5 +1,5 @@
-import {createCommentThread} from './comments.js';
-import {createEssayWorkspace} from './essays.js?v=review-clean-20260924';
+import {createCommentThread} from './comments.js?v=single-response-20260924';
+import {createEssayWorkspace} from './essays.js?v=single-response-20260924';
 import {createSectionModel} from './review-model.js?v=2101a972a2eb';
 (function(){
   "use strict";

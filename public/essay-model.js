@@ -5,9 +5,12 @@ export function measureText(text,limit){
  const charactersOver=Boolean(limit.characters&&characters>limit.characters),wordsOver=Boolean(limit.words&&words>limit.words);
  const part=(count,max,unit,approximate=false)=>`${count.toLocaleString()} / ${approximate?'~':''}${max.toLocaleString()} ${unit}${count>max?' · '+(count-max)+(approximate?' above guidance':' over'):''}`;
  const label=[limit.characters&&part(characters,limit.characters,'characters'),limit.words&&part(words,limit.words,'words',limit.approximateWords)].filter(Boolean).join(' · ');
- return {words,characters,over:charactersOver||(!limit.approximateWords&&wordsOver),guidanceOver:Boolean(limit.approximateWords&&wordsOver),label};
+ const fullLabel=[limit.characters?part(characters,limit.characters,'characters'):characters.toLocaleString()+' characters',limit.words?part(words,limit.words,'words',limit.approximateWords):words.toLocaleString()+' words'].join(' · ');
+ return {words,characters,fullLabel,over:charactersOver||(!limit.approximateWords&&wordsOver),guidanceOver:Boolean(limit.approximateWords&&wordsOver),label};
 }
 export function draftText(essay,state){return typeof state.essayDrafts?.[essay.id]?.text==='string'?state.essayDrafts[essay.id].text:essay.draft;}
 export function unresolvedMarkers(text){return /ABS #__|\[[^\]]*(?:confirm|date|term|year)[^\]]*\]/i.test(text);}
 
 export function versionThreadId(essay,version){return version==='working'?essay.id:essay.id+'--'+version;}
+
+export function commentMessages(state,id,aliases=[]){return [...new Set([id,...aliases])].flatMap(key=>(state.threads[key]||[]).map(message=>({key,message})));}

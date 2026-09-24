@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import crypto from 'node:crypto';
-import {measureText,limitLabel,draftText,unresolvedMarkers,versionThreadId} from '../public/essay-model.js';
+import {measureText,limitLabel,draftText,unresolvedMarkers,versionThreadId,commentMessages} from '../public/essay-model.js';
 
 test('character and word limits have distinct boundaries and preserve empty edits',()=>{
  assert.equal(measureText('x'.repeat(1700),{characters:1700}).over,false);
@@ -53,4 +53,20 @@ test('version comments remain separate from prior general feedback and personal 
  assert.equal(versionThreadId(e,'working'),e.id);
  assert.equal(versionThreadId(e,'v7'),'essay-tmu-q1--v7');
  assert.notEqual(versionThreadId(e,'v7'),versionThreadId(e,'v6'));
+});
+
+
+test('feedback counters always show characters and words, with school-specific limits',()=>{
+ assert.equal(measureText('hello world',{characters:1700}).fullLabel,'11 / 1,700 characters · 2 words');
+ assert.equal(measureText('',{characters:150}).fullLabel,'0 / 150 characters · 0 words');
+ assert.equal(measureText('hello world',{characters:250,words:50,approximateWords:true}).fullLabel,'11 / 250 characters · 2 / ~50 words');
+});
+
+test('current and earlier general comments retain their original storage references',()=>{
+ const first={text:'Current feedback'},old={text:'Saved working-copy feedback'};
+ const state={threads:{'essay-a--v7':[first],'essay-a':[old],'essay-a--v6':[{text:'Historical version'}]}};
+ const visible=commentMessages(state,'essay-a--v7',['essay-a','essay-a--v7']);
+ assert.equal(visible.length,2);assert.equal(visible[1].message,old);assert.equal(visible[1].key,'essay-a');
+ visible[1].message.text='Edited saved feedback';assert.equal(state.threads['essay-a'][0].text,'Edited saved feedback');
+ assert.equal(state.threads['essay-a--v6'][0].text,'Historical version');
 });

@@ -62,3 +62,11 @@ The Worker rejects a pre-essay client save with HTTP 409 when it would discard e
 The public review interface omits internal drafting notes, section commentary, revision explanations, and promotional headings. Application text and existing reviewer data are unchanged. Always share the full private invitation, including its `#key=` fragment: the base URL alone cannot unlock a fresh browser. Optional `name` in the fragment prefills the name field without auto-opening a review.
 
 Missing or invalid access now displays beside the name field, with a full-invitation input. Open-review is no longer left disabled after a loading failure. Network requests time out after 15 seconds, and configuration loading can retry. Invalid pasted invitations never replace saved valid access. Tests cover fresh-browser recovery, returning review preservation, unavailable local storage, and connection failures.
+
+### Single-response review interface
+
+The latest request supersedes the version-history interface. Each essay now displays only its current published response, with TMU and NOSM as the two school tabs. The publication packer excludes historical responses, originals, and drafting metadata from the encrypted payload. Private authoring files still preserve those records.
+
+Any signed-in reviewer can use Edit response to save their own suggested wording; Done returns to the published response. Each reviewer’s text stays in their existing essayDrafts record. The same comment component serves ABS and essays, with character and word counts while composing, editing, and viewing comments. Current-response and earlier general/working-copy comments remain available in one thread without deleting or moving saved messages.
+
+NOSM5 now describes the academic improvement since Fall 2024. The other eleven response texts are unchanged. Local browser checks verified two independent reviewer edits and returning to the first reviewer’s saved text. All 22 automated tests passed.

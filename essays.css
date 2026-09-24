@@ -5,3 +5,5 @@
 .essay-version{display:block;width:100%;max-width:100%;min-height:46px;margin-top:8px;padding:10px 12px;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--hair);border-radius:8px}.essay-editor{width:100%;box-sizing:border-box}
 
 .essay-workspace > .switch{margin-bottom:24px}#access-message{font-size:15px;line-height:1.5}#invitation-link{margin-top:8px}
+
+.essay-card .cc{opacity:1}

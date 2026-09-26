@@ -70,3 +70,7 @@ The latest request supersedes the version-history interface. Each essay now disp
 Any signed-in reviewer can use Edit response to save their own suggested wording; Done returns to the published response. Each reviewer’s text stays in their existing essayDrafts record. The same comment component serves ABS and essays, with character and word counts while composing, editing, and viewing comments. Current-response and earlier general/working-copy comments remain available in one thread without deleting or moving saved messages.
 
 NOSM5 now describes the academic improvement since Fall 2024. The other eleven response texts are unchanged. Local browser checks verified two independent reviewer edits and returning to the first reviewer’s saved text. All 22 automated tests passed.
+
+### Owner inbox — September 26, 2026
+
+Reviewer summary cards show separate ABS comment, essay comment and saved-draft counts. Filter by reviewer or feedback type; each comment and essay draft repeats its author. Saved drafts are labelled separately from comments. Existing review data, encryption and admin access are unchanged. Checked both filters and author labels in a local browser with synthetic records; all 22 automated tests passed.

@@ -13,6 +13,8 @@ try{
  previous=JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:Buffer.from(packet.iv,'base64url')},readKey,Buffer.from(packet.ciphertext,'base64url'))));
 }catch(error){if(error.code!=='ENOENT')throw error;}
 for(const essay of data.essays){
+ const currentVersion=essay.versions?.find(v=>v.id===essay.version&&v.text===essay.draft);
+ if(currentVersion?.label.includes('Approved'))essay.reviewStatus='approved';
  const old=previous?.essays.find(e=>e.id===essay.id);
  if(old&&(old.draft!==essay.draft||old.prompt!==essay.prompt)){
   if(!essay.updatedAt||essay.updatedAt===old.updatedAt)essay.updatedAt=new Date().toISOString();

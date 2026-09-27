@@ -1,11 +1,12 @@
+import {publicationNotice} from './revision-model.js?v=20260927';
 import {measureText, commentMessages} from './essay-model.js?v=single-response-20260924';
 const el=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!=null)n.textContent=text;return n;};
 const when=iso=>{try{return new Date(iso).toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}catch{return '';}};
 // Shared by ABS entries and essays. Stable IDs keep every thread independent.
-export function createCommentThread({id,title,state,canEdit,onChange,onLocked,limit={characters:150},label='description',award=false,titleLimit=48,essay=false,aliases=[]}){
+export function createCommentThread({id,title,state,canEdit,onChange,onLocked,limit={characters:150},label='description',award=false,titleLimit=48,essay=false,aliases=[],updatedAt=null,draftUpdatedAt=null}){
  const det=el('details','talk'),sum=el('summary'),th=el('div','thread');det.append(sum,th);
  const messages=()=>commentMessages(state,id,aliases);
- const count=()=>{const n=messages().length;sum.textContent=n?`${n} comment${n===1?'':'s'}`:'Comment';};count();
+ const count=()=>{const n=messages().length;const notice=publicationNotice({updatedAt,messages:messages().map(x=>x.message),draftUpdatedAt});sum.textContent=(n?`${n} comment${n===1?'':'s'}`:'Comment')+(notice?.sinceFeedback?' · Updated since your feedback':'');};count();
  const labels={description:'Description',qualifications:'Qualifications',competition:'Competition involved',comment:'Comment',suggestion:'Suggested wording'};
  function bubble(m,threadId=id){
   const bu=el('div','bub',m.text),w=el('span','when');
@@ -17,7 +18,7 @@ export function createCommentThread({id,title,state,canEdit,onChange,onLocked,li
    const editor=el('div','message-editor'),input=el('textarea');input.value=m.text;input.rows=4;input.setAttribute('aria-label','Edit comment on '+title);
    const editCount=el('p','meta');const recount=()=>{editCount.textContent=measureText(input.value,cap).fullLabel;};input.oninput=recount;recount();
    const save=el('button','btn','Save edit'),cancel=el('button','btn ghost','Cancel');save.type=cancel.type='button';
-   save.onclick=()=>{if(!input.value.trim())return;m.text=input.value.trim();m.editedAt=new Date().toISOString();editor.replaceWith(bubble(m,threadId));onChange();};
+   save.onclick=()=>{if(!input.value.trim())return;m.text=input.value.trim();m.editedAt=new Date().toISOString();editor.replaceWith(bubble(m,threadId));count();onChange();};
    cancel.onclick=()=>editor.replaceWith(bubble(m,threadId));editor.append(input,editCount,save,cancel);bu.replaceWith(editor);input.focus();
   });
   unsend.onclick=()=>{
@@ -28,7 +29,14 @@ export function createCommentThread({id,title,state,canEdit,onChange,onLocked,li
   };
   actions.append(edit,unsend);bu.append(actions);return bu;
  }
- for(const {key,message} of messages())th.append(bubble(message,key));
+ const notice=publicationNotice({updatedAt,messages:messages().map(x=>x.message),draftUpdatedAt});
+ const rows=messages().map(x=>({...x,at:Date.parse(x.message.at)||0}));
+ if(notice)rows.push({notice,at:Date.parse(updatedAt)});
+ rows.sort((a,b)=>a.at-b.at);
+ for(const row of rows){
+  if(row.notice){const note=el('div','thread-update',`Imran updated this ${essay?'response':'entry'} · ${when(updatedAt)}`);note.setAttribute('role','note');th.append(note);}
+  else th.append(bubble(row.message,row.key));
+ }
  const cw=el('div','cwrap'),comp=el('div','composer'),ta=el('textarea'),send=el('button','send','↑'),cc=el('div','cc');let choice;
  if(award){const fieldLabel=el('label',null,'Feedback field');choice=el('select');choice.setAttribute('aria-label','Feedback field for '+title);
   const options=[['qualifications','Qualifications'],['description','Description (award name)'],['competition','Competition involved']];

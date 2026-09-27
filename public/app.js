@@ -1,5 +1,5 @@
-import {createCommentThread} from './comments.js?v=single-response-20260924';
-import {createEssayWorkspace} from './essays.js?v=single-response-20260924';
+import {createCommentThread} from './comments.js?v=updates-20260927';
+import {createEssayWorkspace} from './essays.js?v=updates-20260927';
 import {createSectionModel} from './review-model.js?v=2101a972a2eb';
 (function(){
   "use strict";
@@ -93,7 +93,7 @@ import {createSectionModel} from './review-model.js?v=2101a972a2eb';
     return n;
   }
   function tally(){
-    var out=0; for(var k in state.verdicts){ if(state.verdicts[k]==="cut") out++; }
+    var out=SECTIONS.reduce((n,s)=>n+cutCount(s.id),0);
     var left=TOTAL-out, need=Math.max(0,TOTAL-CAP);
     var cls = out>=need ? " class=\"good\"" : "";
     tallyEl.innerHTML = need
@@ -184,7 +184,7 @@ import {createSectionModel} from './review-model.js?v=2101a972a2eb';
       });
       b.appendChild(vs);
 
-      b.appendChild(createCommentThread({id:e.id,title:e.t,state,canEdit:()=>started,onChange:queue,onLocked:locked,limit:{characters:LIM},label:LIMLABEL,award:isAward,titleLimit:TITLE_LIMIT}));
+      b.appendChild(createCommentThread({id:e.id,title:e.t,updatedAt:e.updatedAt,state,canEdit:()=>started,onChange:queue,onLocked:locked,limit:{characters:LIM},label:LIMLABEL,award:isAward,titleLimit:TITLE_LIMIT}));
 
       card.appendChild(b); list.appendChild(card);
     });

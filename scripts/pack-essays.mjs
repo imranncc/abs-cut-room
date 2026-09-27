@@ -5,6 +5,19 @@ const sourcePath=args.find(arg=>!arg.startsWith('--'))||'private/essays-source.j
 if(!process.env.ABS_SECRETS_FILE)throw Error('Set ABS_SECRETS_FILE to the existing private key file.');
 const {key}=JSON.parse(await fs.readFile(process.env.ABS_SECRETS_FILE,'utf8'));
 const data=JSON.parse(await fs.readFile(sourcePath,'utf8'));
+// Keep notices accurate on subsequent publishes, including edits within one version.
+const readKey=await crypto.subtle.importKey('raw',Buffer.from(key,'base64url'),'AES-GCM',false,['decrypt']);
+let previous;
+try{
+ const packet=JSON.parse(await fs.readFile('public/essays.enc.json','utf8'));
+ previous=JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:Buffer.from(packet.iv,'base64url')},readKey,Buffer.from(packet.ciphertext,'base64url'))));
+}catch(error){if(error.code!=='ENOENT')throw error;}
+for(const essay of data.essays){
+ const old=previous?.essays.find(e=>e.id===essay.id);
+ if(old&&(old.draft!==essay.draft||old.prompt!==essay.prompt)){
+  if(!essay.updatedAt||essay.updatedAt===old.updatedAt)essay.updatedAt=new Date().toISOString();
+ }else if(old?.updatedAt)essay.updatedAt=old.updatedAt;
+}
 const ids=new Set();
 for(const e of data.essays){
  if(!e.id.startsWith('essay-')||ids.has(e.id))throw Error('Invalid or duplicate essay ID');ids.add(e.id);
@@ -20,7 +33,7 @@ for(const e of data.essays){
  }
 }
 // Publish only the current response. History and drafting notes stay in private files.
-const published={version:data.version,essays:data.essays.filter(e=>['TMU','NOSM'].includes(e.school)).map(e=>({id:e.id,code:e.code,school:e.school,title:e.title,prompt:e.prompt,limit:e.limit,draft:e.draft,version:e.version,commentThreadId:e.commentThreadId||e.id+'--v7'}))};
+const published={version:data.version,essays:data.essays.filter(e=>['TMU','NOSM'].includes(e.school)).map(e=>({id:e.id,code:e.code,school:e.school,title:e.title,prompt:e.prompt,limit:e.limit,draft:e.draft,version:e.version,updatedAt:e.updatedAt,reviewStatus:e.reviewStatus,commentThreadId:e.commentThreadId||e.id+'--v7'}))};
 const cryptoKey=await crypto.subtle.importKey('raw',Buffer.from(key,'base64url'),'AES-GCM',false,['encrypt']);
 const iv=crypto.getRandomValues(new Uint8Array(12));
 const bytes=await crypto.subtle.encrypt({name:'AES-GCM',iv},cryptoKey,new TextEncoder().encode(JSON.stringify(published)));
